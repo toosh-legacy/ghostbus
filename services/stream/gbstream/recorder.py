@@ -205,7 +205,7 @@ def main(argv: list[str] | None = None) -> int:
     publisher = None
     if s.stream_bus == "redis":
         try:
-            from gbstream.bus_redis import make_raw_publisher
+            from gbcore.adapters_full import make_raw_publisher
 
             publisher = make_raw_publisher(s.redis_url)
         except Exception as e:  # noqa: BLE001
