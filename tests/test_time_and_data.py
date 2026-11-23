@@ -116,7 +116,7 @@ needs_data = pytest.mark.skipif(not (LAKE / "arrdep").exists(), reason="run `mak
 @needs_data
 def test_arrdep_schema_and_bounds():
     con = duckdb.connect()
-    con.execute(f"CREATE VIEW a AS SELECT * FROM read_parquet('{(LAKE / 'arrdep').as_posix()}/**/*.parquet', hive_partitioning=true)")
+    con.execute(f"CREATE VIEW a AS SELECT * FROM read_parquet('{(LAKE / 'arrdep').as_posix()}/**/*.parquet', hive_partitioning=true, hive_types_autocast=false)")
     cols = {r[0] for r in con.execute("DESCRIBE a").fetchall()}
     assert {"service_date", "route_id", "direction_id", "half_trip_id", "sched_s", "actual_s", "delay_s",
             "scheduled_utc", "actual_utc", "headway", "scheduled_headway"} <= cols

@@ -106,6 +106,8 @@ class Processor:
         self._match: dict[tuple[str, str], VehicleMatchState] = {}
         self._prog: dict[tuple[str, str], TripProgress] = {}
         self._trip_last_seen: dict[str, float] = {}
+        self._trip_vehicle: dict[str, str] = {}
+        self._trip_last_arrival: dict[str, tuple[int, float, str]] = {}  # trip -> (stop_index, ts, stop_id)
         self._tu_last: dict[str, float] = {}
         self._last_vp_fetch: float | None = None
         self._last_vp_rate: int | None = None
@@ -143,6 +145,12 @@ class Processor:
     def outputs(self) -> dict:
         return {"pings": [asdict(p) for p in self.pings], "arrivals": [asdict(a) for a in self.arrivals],
                 "ghost_evals": [asdict(g) for g in self.ghost_evals], "stats": asdict(self.stats)}
+
+    def trip_live(self, trip_id: str) -> dict:
+        la = self._trip_last_arrival.get(trip_id)
+        return {"vehicle_id": self._trip_vehicle.get(trip_id), "last_seen": self._trip_last_seen.get(trip_id),
+                "last_stop_index": la[0] if la else None, "last_arrival_ts": la[1] if la else None,
+                "has_tu": trip_id in self._tu_last}
 
     def health(self) -> dict:
         h = feed_health(self.clock, self._last_vp_fetch, self._last_vp_rate, self._typical(self.clock))
@@ -229,6 +237,7 @@ class Processor:
             return
         self.stats.matched += 1
         self._trip_last_seen[tid] = max(self._trip_last_seen.get(tid, 0.0), e.vehicle_ts)
+        self._trip_vehicle[tid] = e.vehicle_id
         v = self.state.get_vehicle(e.vehicle_id)
         if v is not None and v.get("trip_id") == tid:
             v = dict(v, dist_m=r.dist_m, match_status=r.status)
@@ -237,6 +246,7 @@ class Processor:
         arrs = self.detector.update(prog, p.stop_dists, p.stop_ids, p.stop_seqs, e.vehicle_ts, r.dist_m,
                                     route_id=p.route_id, vehicle_id=e.vehicle_id, source=e.source)
         for a in arrs:
+            self._trip_last_arrival[tid] = (a.stop_index, a.arrival_ts, a.stop_id)
             self.stats.arrivals += 1
             self.arrivals.append(a)
             if self.bc:

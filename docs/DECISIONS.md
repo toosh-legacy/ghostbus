@@ -24,3 +24,11 @@ One line each: decision — reason — alternative considered.
 - Ghost scoring on the simulator uses each trip's final state (last evaluation before scheduled end + 10 min); outage gate checks evaluations from outage start + 2 min (the staleness threshold) to outage end — the rule cannot fire earlier by definition — whole window.
 - Map matching uses shapely STRtree over segment bounding boxes + vectorized projection; small backward jitter keeps the raw projection, arrival detection uses a running max — unbiased distance error — clamping (biases forward).
 - Simulator truth arrival = first time true distance reaches stop − 15 m (same definition as the detector) — measures detector error, not definition mismatch — stop-position arrival time.
+- OTP startpoints use the same −60/+360 s window as other points (spec only states the early bound for startpoints) — symmetric, conservative; flagged for developer review — early bound only.
+- Metrics computed over the whole route-month-daytype-band group with GROUPING SETS rollups ('all'); EWT computed from pooled headways of the group — simple, matches formula — per-stop EWT then averaged.
+- Missed-trip time band = band of the half-trip's first scheduled timepoint — trips span bands — per-event band.
+- Copilot views are materialized tables in var/analytics.duckdb (not views over Parquet) — lets the copilot connection run read_only with enable_external_access=false — views over files.
+- Hive partition values read with hive_types_autocast=false — numeric route ids were silently cast to integers — explicit casts per query.
+- API "now" = processor event clock (falls back to wall clock with no events) — replay and live give identical stop pages — wall clock.
+- Stop page "Not yet tracking" + elevated risk come from the ghost rules; when feed is stale the API forces ghost state unknown and drops live delay (schedule + historical range) — spec F2 AC3.
+- Request logging middleware logs method + path only (never query strings) and uvicorn access log is disabled — nearby-stop coordinates are never logged (spec 15).

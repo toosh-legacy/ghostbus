@@ -12,3 +12,8 @@
 ## Phase 2 — simulator + stream processor
 - Simulator (6 seeded scenarios, all imperfections, exact ground truth), decoder, dedupe + watermark ordering, STRtree map matching, arrival detection, ghost-def v1.0, live state + broadcaster, replay engine (any speed, event time), curated writers, Redis Streams/live-state full-mode adapters.
 - All six scenarios pass map-matching (median ≈ 6 m), arrival (median ≈ 4 s, p90 ≈ 16–24 s) and ghost gates (P = R = 1.0).
+
+## Phase 3 — metrics + API
+- Reliability metrics (OTP, headway adherence, EWT, bunching, missed-trip rate) by route/month/day type/time band; historical missed-trip labels with unknown handling; DuckDB analytics DB with allowlisted views.
+- Operational DB (SQLAlchemy + Alembic, SQLite lite / Postgres full), seeded with the static network and manifest.
+- FastAPI: all section-13 endpoints incl. SSE stream, CSV export, methodology, admin views, problem+json errors; OpenAPI exported to packages/schemas/openapi.json.

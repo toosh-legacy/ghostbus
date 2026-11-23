@@ -140,7 +140,7 @@ def run_all(months: list[str] | None = None) -> dict:
     con.register("sched_df", sched)
     con.execute("CREATE TABLE sched AS SELECT * FROM sched_df")
     con.execute(f"COPY sched TO '{sched_dir.as_posix()}' (FORMAT PARQUET, PARTITION_BY (month))")
-    con.execute(f"CREATE VIEW arr AS SELECT * FROM read_parquet('{(s.lake_dir / 'curated' / 'arrdep').as_posix()}/**/*.parquet', hive_partitioning=true)")
+    con.execute(f"CREATE VIEW arr AS SELECT * FROM read_parquet('{(s.lake_dir / 'curated' / 'arrdep').as_posix()}/**/*.parquet', hive_partitioning=true, hive_types_autocast=false)")
     comp = completeness(con)
     comp_path = s.lake_dir / "curated" / "completeness.parquet"
     comp.to_parquet(comp_path, index=False)
@@ -149,15 +149,25 @@ def run_all(months: list[str] | None = None) -> dict:
                "route_days": len(comp), "unknown_route_days": int(comp["unknown"].sum()), "static": {
                    k: v for k, v in static_info.items() if k != "off_shape_examples"}}
     update_manifest("scheduled_trips", rows=len(sched), source="real (derived from GTFS archive)")
+    from . import analytics, load_db, metrics
+
+    summary["metrics"] = metrics.build()
+    analytics.build()
+    summary["db"] = load_db.run()
     print(json.dumps(summary, indent=1, default=str))
     return summary
 
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("step", nargs="?", default="all")
+    p.add_argument("step", nargs="?", default="all", choices=["all", "derived"])
     p.add_argument("--months", nargs="*")
     a = p.parse_args()
+    if a.step == "derived":  # metrics + analytics + DB only (no downloads)
+        from . import analytics, load_db, metrics
+
+        print(metrics.build(), analytics.build(), load_db.run())
+        return 0
     run_all(a.months)
     return 0
 

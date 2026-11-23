@@ -64,6 +64,9 @@ class LiveState(ABC):
     @abstractmethod
     def ghosts(self) -> dict[str, dict]: ...
 
+    def get_ghost(self, key: str) -> dict | None:
+        return self.ghosts().get(key)
+
     @abstractmethod
     def set_meta(self, key: str, value: Any) -> None: ...
 
