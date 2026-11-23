@@ -39,3 +39,6 @@ One line each: decision — reason — alternative considered.
 - Pinned Model A = the last backtest fold's model (trained through 2025-12-10, calibrated on the following week) — its coverage/MAE are measured on held-out weeks — refit on all data without a held-out check.
 - Model B chosen by mean Brier across folds (HGB + isotonic); it beats the rolling 28-day baseline but only ties the overall-rate baseline — signal from pre-4 AM features is weak; reported honestly — tune more features.
 - Model classes live in gbml/models.py — the first artifacts pickled under `__main__` were unloadable from the API — custom unpickler.
+- Web served on port 3100 (3000 is used by another local app); Playwright uses the system Edge channel — no browser download needed — bundled Chromium download.
+- Ghost evaluation is 'unknown' for the first 3 minutes of feed after a pipeline (re)start — the 60 s reorder buffer otherwise makes every in-progress trip look unmatched — no warm-up (false High after restarts).
+- Node is available so the Next.js app is the primary UI; the FastAPI /demo page (lite fallback) is not built — spec makes /demo the no-Node fallback only — build both.

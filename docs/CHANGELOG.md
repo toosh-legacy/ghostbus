@@ -22,3 +22,8 @@
 - Model A: quantile HistGradientBoosting (p10/p50/p90) + conformalized quantile regression; 3-fold rolling-origin backtest: p50 MAE 95.7 s vs best baseline (propagation) 139.9 s (31.6% better); 80% coverage 79.3%.
 - Model B: missed-trip probability (HGB + isotonic): Brier 0.01757 vs rolling-28d baseline 0.01767 (beats), ROC-AUC 0.60, PR-AUC 0.036 vs base rate ~0.018.
 - ModelRegistry with pinned versions and the 1% promotion rule; serving in the stop page (Model A) and ghost priors (Model B); delayed-label join + PSI utilities; leakage tests.
+
+## Phase 5 — frontend
+- Next.js 16 app: /, /stops/[id], /routes/[id] (Leaflet + SSE + list alternative), /reliability (+ route detail, CSV), /methodology, /ask, /admin; PWA manifest; typed client generated from OpenAPI.
+- Playwright + axe happy path (mobile viewport) passes on 5 pages; `make demo` serves API :8000 + web :3100 with a replay of recorded data.
+- Ghost rules get a 3-minute warm-up (unknown) after each pipeline start so restarts never produce false ghosts.

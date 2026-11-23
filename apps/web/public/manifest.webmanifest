@@ -1,0 +1,10 @@
+{
+  "name": "GhostBus",
+  "short_name": "GhostBus",
+  "description": "Is my bus actually coming? Honest arrival ranges and ghost-bus risk.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e3a8a",
+  "icons": [{ "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }]
+}

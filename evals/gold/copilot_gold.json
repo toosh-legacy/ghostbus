@@ -1,0 +1,586 @@
+{
+  "generated_from": "lake/curated/metrics/route_metrics.parquet",
+  "seed": 2025,
+  "answerable": [
+    {
+      "kind": "ranking",
+      "question": "Which 5 pilot routes had the highest excess wait time in the PM peak in July 2025?",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "routes": [
+          "28",
+          "66",
+          "39",
+          "1",
+          "23"
+        ],
+        "values": [
+          146.84973599721053,
+          120.31409502306775,
+          119.52924597871288,
+          112.54924357594604,
+          105.93167894669449
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 3 pilot routes had the highest bunching rate in the AM peak in November 2025?",
+      "metric": "bunching_rate",
+      "expected": {
+        "routes": [
+          "111",
+          "1",
+          "66"
+        ],
+        "values": [
+          0.1245695285595535,
+          0.09434849018916697,
+          0.08888326158521144
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 2 pilot routes had the highest missed-trip rate on weekdays in the AM peak in July 2025?",
+      "metric": "missed_trip_rate",
+      "expected": {
+        "routes": [
+          "77",
+          "111"
+        ],
+        "values": [
+          0.0893854748603352,
+          0.027761370348493797
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 2 pilot routes had the lowest excess wait time on weekends in the evening in July 2025?",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "routes": [
+          "743",
+          "111"
+        ],
+        "values": [
+          40.65060448221902,
+          52.418060316273284
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 2 pilot routes had the highest on-time performance on weekends in August 2025?",
+      "metric": "on_time_performance",
+      "expected": {
+        "routes": [
+          "1",
+          "77"
+        ],
+        "values": [
+          0.9217877094972067,
+          0.7967914438502673
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 2 pilot routes had the highest bunching rate on weekends at midday in October 2025?",
+      "metric": "bunching_rate",
+      "expected": {
+        "routes": [
+          "28",
+          "66"
+        ],
+        "values": [
+          0.13864778437642758,
+          0.13650710152551288
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 2 pilot routes had the lowest excess wait time in the AM peak in August 2025?",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "routes": [
+          "741",
+          "77"
+        ],
+        "values": [
+          38.58344012103743,
+          39.29354606906122
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 2 pilot routes had the lowest missed-trip rate on weekdays in the evening in August 2025?",
+      "metric": "missed_trip_rate",
+      "expected": {
+        "routes": [
+          "23",
+          "109"
+        ],
+        "values": [
+          0.005952380952380952,
+          0.008353221957040573
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 2 pilot routes had the lowest bunching rate on weekends in the PM peak in September 2025?",
+      "metric": "bunching_rate",
+      "expected": {
+        "routes": [
+          "741",
+          "743"
+        ],
+        "values": [
+          0.02937365010799136,
+          0.050497866287339974
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 3 pilot routes had the lowest headway adherence on weekends in the PM peak in November 2025?",
+      "metric": "headway_adherence",
+      "expected": {
+        "routes": [
+          "1",
+          "28",
+          "66"
+        ],
+        "values": [
+          0.5098570724494825,
+          0.5727807623433103,
+          0.6375753728974929
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 5 pilot routes had the lowest missed-trip rate on weekdays in the evening in December 2025?",
+      "metric": "missed_trip_rate",
+      "expected": {
+        "routes": [
+          "109",
+          "1",
+          "111",
+          "66",
+          "23"
+        ],
+        "values": [
+          0.0010905125408942203,
+          0.01279317697228145,
+          0.013434579439252336,
+          0.013471502590673576,
+          0.017708333333333333
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 3 pilot routes had the highest missed-trip rate in the evening in September 2025?",
+      "metric": "missed_trip_rate",
+      "expected": {
+        "routes": [
+          "743",
+          "741",
+          "23"
+        ],
+        "values": [
+          0.035398230088495575,
+          0.03248407643312102,
+          0.03228410008071025
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 3 pilot routes had the lowest excess wait time at midday in November 2025?",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "routes": [
+          "741",
+          "66",
+          "111"
+        ],
+        "values": [
+          43.28900349038639,
+          59.776742147136474,
+          59.92347387852567
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 2 pilot routes had the highest headway adherence on weekends in September 2025?",
+      "metric": "headway_adherence",
+      "expected": {
+        "routes": [
+          "743",
+          "23"
+        ],
+        "values": [
+          0.8269925611052072,
+          0.7962724448821881
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 5 pilot routes had the highest headway adherence on weekends at midday in November 2025?",
+      "metric": "headway_adherence",
+      "expected": {
+        "routes": [
+          "743",
+          "111",
+          "741",
+          "77",
+          "23"
+        ],
+        "values": [
+          0.8092238927265339,
+          0.8058185574109141,
+          0.8024713467048711,
+          0.7998647734956051,
+          0.7893945092139902
+        ]
+      }
+    },
+    {
+      "kind": "ranking",
+      "question": "Which 5 pilot routes had the highest missed-trip rate on weekends in the evening in September 2025?",
+      "metric": "missed_trip_rate",
+      "expected": {
+        "routes": [
+          "23",
+          "741",
+          "28",
+          "39",
+          "743"
+        ],
+        "values": [
+          0.054878048780487805,
+          0.03991596638655462,
+          0.024096385542168676,
+          0.02112676056338028,
+          0.020833333333333332
+        ]
+      }
+    },
+    {
+      "kind": "comparison",
+      "question": "Compare excess wait time for route 111 and SL3 in October 2025.",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "values": {
+          "111": 56.50044677345193,
+          "743": 70.6430776508426
+        }
+      }
+    },
+    {
+      "kind": "comparison",
+      "question": "Compare headway adherence for SL3 and route 23 in September 2025.",
+      "metric": "headway_adherence",
+      "expected": {
+        "values": {
+          "743": 0.7461510735801452,
+          "23": 0.6970004999166806
+        }
+      }
+    },
+    {
+      "kind": "comparison",
+      "question": "Compare excess wait time for route 1 and SL3 in November 2025.",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "values": {
+          "1": 102.07438109310698,
+          "743": 62.03668276563195
+        }
+      }
+    },
+    {
+      "kind": "comparison",
+      "question": "Compare bunching rate for route 1 and route 23 in August 2025.",
+      "metric": "bunching_rate",
+      "expected": {
+        "values": {
+          "1": 0.08344017950156263,
+          "23": 0.07613918098657775
+        }
+      }
+    },
+    {
+      "kind": "comparison",
+      "question": "Compare on-time performance for route 23 and route 111 in December 2025.",
+      "metric": "on_time_performance",
+      "expected": {
+        "values": {
+          "23": 0.6945736434108527,
+          "111": 0.7878787878787878
+        }
+      }
+    },
+    {
+      "kind": "comparison",
+      "question": "Compare bunching rate for route 77 and route 111 in September 2025.",
+      "metric": "bunching_rate",
+      "expected": {
+        "values": {
+          "77": 0.07075945475043559,
+          "111": 0.0959584075655204
+        }
+      }
+    },
+    {
+      "kind": "comparison",
+      "question": "Compare excess wait time for route 1 and route 109 in November 2025.",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "values": {
+          "1": 102.07438109310698,
+          "109": 75.65164942211516
+        }
+      }
+    },
+    {
+      "kind": "comparison",
+      "question": "Compare bunching rate for route 23 and route 111 in August 2025.",
+      "metric": "bunching_rate",
+      "expected": {
+        "values": {
+          "23": 0.07613918098657775,
+          "111": 0.09860443323925436
+        }
+      }
+    },
+    {
+      "kind": "trend",
+      "question": "How did on-time performance on route 39 change by month?",
+      "metric": "on_time_performance",
+      "expected": {
+        "route": "39",
+        "values": {
+          "2025-07": 0.841296928327645,
+          "2025-08": 0.7916666666666666,
+          "2025-09": 0.8109965635738832,
+          "2025-10": 0.8538587848932676,
+          "2025-11": 0.8808290155440415,
+          "2025-12": 0.8043478260869565
+        }
+      }
+    },
+    {
+      "kind": "trend",
+      "question": "How did headway adherence on route 111 change by month?",
+      "metric": "headway_adherence",
+      "expected": {
+        "route": "111",
+        "values": {
+          "2025-07": 0.6605771135518236,
+          "2025-08": 0.6490445220379067,
+          "2025-09": 0.657982901386041,
+          "2025-10": 0.6528523649254597,
+          "2025-11": 0.6882571858421094,
+          "2025-12": 0.6885048867146728
+        }
+      }
+    },
+    {
+      "kind": "trend",
+      "question": "How did headway adherence on route 39 change by month?",
+      "metric": "headway_adherence",
+      "expected": {
+        "route": "39",
+        "values": {
+          "2025-07": 0.6540560925745816,
+          "2025-08": 0.6704326092699083,
+          "2025-09": 0.6197114997179467,
+          "2025-10": 0.6171500680245283,
+          "2025-11": 0.6748150327896418,
+          "2025-12": 0.6805533628039154
+        }
+      }
+    },
+    {
+      "kind": "trend",
+      "question": "How did on-time performance on route 66 change by month?",
+      "metric": "on_time_performance",
+      "expected": {
+        "route": "66",
+        "values": {
+          "2025-07": 0.4681274900398406,
+          "2025-08": 0.5382003395585738,
+          "2025-09": 0.4419161676646707,
+          "2025-10": 0.3665158371040724,
+          "2025-11": 0.4097938144329897,
+          "2025-12": 0.38753056234718825
+        }
+      }
+    },
+    {
+      "kind": "trend",
+      "question": "How did on-time performance on route 77 change by month?",
+      "metric": "on_time_performance",
+      "expected": {
+        "route": "77",
+        "values": {
+          "2025-07": 0.8283333333333334,
+          "2025-08": 0.8611570247933884,
+          "2025-09": 0.84,
+          "2025-10": 0.8516129032258064,
+          "2025-11": 0.825,
+          "2025-12": 0.8042071197411004
+        }
+      }
+    },
+    {
+      "kind": "trend",
+      "question": "How did bunching rate on route 111 change by month?",
+      "metric": "bunching_rate",
+      "expected": {
+        "route": "111",
+        "values": {
+          "2025-07": 0.09483195034446328,
+          "2025-08": 0.09860443323925436,
+          "2025-09": 0.0959584075655204,
+          "2025-10": 0.09409058777603106,
+          "2025-11": 0.08331165231949142,
+          "2025-12": 0.08235194888717857
+        }
+      }
+    },
+    {
+      "kind": "trend",
+      "question": "How did missed-trip rate on SL3 change by month?",
+      "metric": "missed_trip_rate",
+      "expected": {
+        "route": "743",
+        "values": {
+          "2025-07": 0.012394195888754534,
+          "2025-08": 0.016358679188124812,
+          "2025-09": 0.029275808936825885,
+          "2025-10": 0.02946375957572186,
+          "2025-11": 0.018483709273182956,
+          "2025-12": 0.024645808736717827
+        }
+      }
+    },
+    {
+      "kind": "trend",
+      "question": "How did on-time performance on route 23 change by month?",
+      "metric": "on_time_performance",
+      "expected": {
+        "route": "23",
+        "values": {
+          "2025-07": 0.813915857605178,
+          "2025-08": 0.8032786885245902,
+          "2025-09": 0.7665615141955836,
+          "2025-10": 0.7350689127105666,
+          "2025-11": 0.6902800658978583,
+          "2025-12": 0.6945736434108527
+        }
+      }
+    },
+    {
+      "kind": "value",
+      "question": "What was the bunching rate of route 39 in the evening in December 2025?",
+      "metric": "bunching_rate",
+      "expected": {
+        "values": {
+          "39": 0.08140804074949973
+        }
+      }
+    },
+    {
+      "kind": "value",
+      "question": "What was the excess wait time of route 23 at midday in July 2025?",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "values": {
+          "23": 92.50630322275094
+        }
+      }
+    },
+    {
+      "kind": "value",
+      "question": "What was the excess wait time of route 39 in the evening in September 2025?",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "values": {
+          "39": 125.45993593668089
+        }
+      }
+    },
+    {
+      "kind": "value",
+      "question": "What was the bunching rate of route 39 in September 2025?",
+      "metric": "bunching_rate",
+      "expected": {
+        "values": {
+          "39": 0.11711257957933757
+        }
+      }
+    },
+    {
+      "kind": "value",
+      "question": "What was the bunching rate of route 77 in the evening in October 2025?",
+      "metric": "bunching_rate",
+      "expected": {
+        "values": {
+          "77": 0.08287519487978993
+        }
+      }
+    },
+    {
+      "kind": "value",
+      "question": "What was the excess wait time of route 66 at midday in September 2025?",
+      "metric": "excess_wait_time_s",
+      "expected": {
+        "values": {
+          "66": 49.03529530370952
+        }
+      }
+    },
+    {
+      "kind": "value",
+      "question": "What was the missed-trip rate of route 23 in the AM peak in November 2025?",
+      "metric": "missed_trip_rate",
+      "expected": {
+        "values": {
+          "23": 0.029310344827586206
+        }
+      }
+    },
+    {
+      "kind": "value",
+      "question": "What was the headway adherence of route 109 in the AM peak in September 2025?",
+      "metric": "headway_adherence",
+      "expected": {
+        "values": {
+          "109": 0.6895954472349375
+        }
+      }
+    }
+  ],
+  "unanswerable": [
+    "What will the weather be in Boston tomorrow?",
+    "Which bus driver had the most complaints?",
+    "How many passengers rode route 111 in December 2025?",
+    "What was the on-time performance of the Red Line last month?",
+    "Which routes had the highest missed-trip rate in March 2024?",
+    "Predict the missed-trip rate for route 1 next month.",
+    "What is the fare for route 28?",
+    "Why is route 66 so unreliable?",
+    "Tell me a joke about buses.",
+    "What was the missed-trip rate for route 999 in December 2025?"
+  ]
+}

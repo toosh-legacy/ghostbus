@@ -23,12 +23,13 @@ from gbcore.timeutil import service_date_for, service_day_reference
 from gbschemas.events import Event, FeedFetchEvent, TripUpdateEvent, VehicleEvent
 
 from .arrivals import ArrivalDetector, ArrivalEvent, TripProgress
-from .ghost import GhostEval, ScheduledTrip, evaluate_trip, feed_health
+from .ghost import FeedHealth, GhostEval, ScheduledTrip, evaluate_trip, feed_health
 from .mapmatch import MapMatcher, VehicleMatchState
 from .network import Network
 
 LATENESS_S = 60.0
 GHOST_EVAL_EVERY_S = 30.0
+WARMUP_S = 180.0
 DEDUPE_HORIZON_S = 3600.0
 
 
@@ -110,6 +111,7 @@ class Processor:
         self._trip_last_arrival: dict[str, tuple[int, float, str]] = {}  # trip -> (stop_index, ts, stop_id)
         self._tu_last: dict[str, float] = {}
         self._last_vp_fetch: float | None = None
+        self._first_fetch: float | None = None
         self._last_vp_rate: int | None = None
         self._next_ghost = float("-inf")
         self._schedule: dict[str, ScheduledTrip] = {t.trip_id: t for t in (schedule or [])}
@@ -131,6 +133,8 @@ class Processor:
         elif isinstance(e, FeedFetchEvent):
             self.stats.fetches += 1
             if e.feed == "VehiclePositions" and e.ok:
+                if self._first_fetch is None:
+                    self._first_fetch = e.fetch_ts
                 self._last_vp_fetch = e.fetch_ts
                 self._last_vp_rate = e.n_entities
             self._advance_clock(e.fetch_ts)
@@ -269,6 +273,10 @@ class Processor:
         self._next_ghost = (ts // GHOST_EVAL_EVERY_S + 1) * GHOST_EVAL_EVERY_S
         self._ensure_schedule(ts)
         h = feed_health(ts, self._last_vp_fetch, self._last_vp_rate, self._typical(ts))
+        if self._first_fetch is None or ts - self._first_fetch < WARMUP_S:
+            # right after (re)start the reorder buffer has not released pings yet: never call ghosts then
+            h = FeedHealth(False, "warming up: fewer than 3 minutes of feed observed since start", h.last_fetch_ts,
+                           h.last_rate)
         self.state.set_meta("feed_health", {"healthy": h.healthy, "reason": h.reason,
                                             "last_fetch_ts": h.last_fetch_ts, "clock": ts})
         for key, t in self._schedule.items():

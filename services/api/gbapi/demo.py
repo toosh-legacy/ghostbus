@@ -25,8 +25,11 @@ def main() -> int:
     proc = None
     npm = shutil.which("npm")
     if npm and (web / "node_modules").exists() and "--no-web" not in sys.argv:
-        proc = subprocess.Popen([npm, "run", "dev"], cwd=web, env={**os.environ, "NEXT_PUBLIC_API": "http://127.0.0.1:8000"})
-        print("web app: http://127.0.0.1:3000")
+        port = os.environ.get("WEB_PORT", "3100")
+        built = (web / ".next" / "BUILD_ID").exists()
+        cmd = [npm, "run", "start" if built else "dev", "--", "-p", port]
+        proc = subprocess.Popen(cmd, cwd=web, env={**os.environ, "NEXT_PUBLIC_API": "http://127.0.0.1:8000"})
+        print(f"web app: http://127.0.0.1:{port}")
     print("api: http://127.0.0.1:8000  demo page: http://127.0.0.1:8000/demo")
     try:
         uvicorn.run("gbapi.app:app", host="127.0.0.1", port=int(os.environ.get("PORT", "8000")), access_log=False)

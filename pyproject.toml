@@ -59,6 +59,7 @@ addopts = "-q -m 'not network'"
 
 [tool.ruff]
 line-length = 110
+extend-exclude = ["services/api/migrations"]
 target-version = "py312"
 
 [tool.ruff.lint]
