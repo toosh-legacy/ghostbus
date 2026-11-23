@@ -64,6 +64,34 @@ class ModelAPredictor:
                           {**X.iloc[0].to_dict(), "band": time_band(sched_local_hour)})
 
 
+    def predict_many(self, requests: list[dict]) -> list:
+        """Batched predict: one model call for every live-eligible request, fallback for the rest."""
+        from gbapi.predict import Prediction
+
+        out: list = [None] * len(requests)
+        rows, idx = [], []
+        for j, r in enumerate(requests):
+            if not r.get("live") or r.get("current_delay_s") is None or r.get("last_stop_index") is None                     or r.get("pattern") is None:
+                out[j] = self.fallback.predict(**r)
+                continue
+            rows.append(self.features(route_id=r["route_id"], direction_id=r["direction_id"], stop_id=r["stop_id"],
+                                      sched_local_hour=r["sched_local_hour"], current_delay_s=r["current_delay_s"],
+                                      pattern=r["pattern"], stop_index=r["stop_index"],
+                                      last_stop_index=r["last_stop_index"], service_date=r["service_date"]))
+            idx.append(j)
+        if rows:
+            X = pd.concat(rows, ignore_index=True)
+            q = self.m.predict(X)
+            for n, j in enumerate(idx):
+                r = requests[j]
+                lo, mid, hi = sorted([float(q["p10"].iloc[n]), float(q["p50"].iloc[n]), float(q["p90"].iloc[n])])
+                floor = (r.get("now") or r["sched_ts"]) - r["sched_ts"]
+                lo, mid, hi = max(lo, floor), max(mid, floor), max(hi, floor)
+                out[j] = Prediction(r["sched_ts"] + lo, r["sched_ts"] + mid, r["sched_ts"] + hi, "model", self.version,
+                                    {**X.iloc[n].to_dict(), "band": time_band(r["sched_local_hour"])})
+        return out
+
+
 class ModelBPriors:
     def __init__(self, model, version: str) -> None:
         self.m = model

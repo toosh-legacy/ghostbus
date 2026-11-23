@@ -70,7 +70,8 @@ class AppContext:
         except Exception as e:  # noqa: BLE001
             log.info("models not loaded: %s", e)
         priors = self.model_b.trip_priors(self.net) if self.model_b is not None else {}
-        self.pipeline = LivePipeline(self.net, self.route_set, pipeline_mode, speed, scenario, priors)
+        self.pipeline = LivePipeline(self.net, self.route_set, pipeline_mode, speed, scenario, priors,
+                                     persist=os.environ.get("PERSIST_LIVE", "1") == "1" and pipeline_mode != "off")
         stops = self.net.stops.reset_index()
         self.stops = stops
         self._stop_pts = [Point(x, y) for x, y in zip(stops["x"], stops["y"])]
@@ -82,6 +83,7 @@ class AppContext:
         self.metrics_dir = s.lake_dir / "curated" / "metrics"
         self.lake = duckdb.connect()
         self.prediction_log: list[dict] = []
+        self.pipeline.prediction_log = self.prediction_log
 
     # ---- clock & health (event time)
     def now(self) -> float:
@@ -254,7 +256,8 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
         out = []
         sd = service_date_for(datetime.fromtimestamp(now, UTC))
         g = c.stop_trips[stop_id]
-        for d in {sd, sd.fromordinal(sd.toordinal() - 1)}:
+        cands: list[tuple] = []
+        for d in sorted({sd, sd.fromordinal(sd.toordinal() - 1)}):
             active = set(c.net.trips_on(d, c.route_set))
             ref = service_day_reference(d).astimezone(UTC).timestamp()
             for tid, seq in zip(g["trip_id"], g["stop_sequence"]):
@@ -279,40 +282,53 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
                     cur_delay = live["last_arrival_ts"] - (ref + float(p.sched_arr_s[k]))
                 use_live = health["healthy"] and live["last_seen"] is not None
                 local_hour = datetime.fromtimestamp(sched, AGENCY_TZ).hour
-                pred = c.predictor.predict(route_id=p.route_id, direction_id=p.direction_id, stop_id=stop_id,
-                                           sched_ts=sched, sched_local_hour=local_hour,
-                                           current_delay_s=cur_delay if use_live else None, live=use_live,
-                                           pattern=p, stop_index=i, last_stop_index=live["last_stop_index"],
-                                           ref=ref, now=now, service_date=d)
-                if pred.p90_ts < now - 120:
-                    continue
-                gkey = f"{tid}@{d.isoformat()}"
-                ghost = c.pipeline.state.get_ghost(gkey)
-                if not health["healthy"]:
-                    gstate = {"state": "unknown", "reason": "feed is stale or unhealthy; showing schedule plus "
-                              "historical ranges", "def_version": definitions.GHOST_DEF_VERSION}
-                elif ghost:
-                    gstate = {"state": ghost["state"], "reason": ghost["reason"], "def_version": ghost["def_version"]}
-                else:
-                    gstate = {"state": "unknown", "reason": "not evaluated yet", "def_version": definitions.GHOST_DEF_VERSION}
-                prior = c.pipeline.priors.get(tid)
-                tracking = live["last_seen"] is not None and now - live["last_seen"] <= 600
-                row = {
-                    "trip_id": tid, "route_id": p.route_id, "direction_id": p.direction_id,
-                    "headsign": str(c.net._trip_meta.loc[tid].get("trip_headsign", "")),
-                    "scheduled_utc": _iso(sched),
-                    "predicted": {"p10_utc": _iso(pred.p10_ts), "p50_utc": _iso(pred.p50_ts), "p90_utc": _iso(pred.p90_ts),
-                                  "range_text": range_words(now, pred.p10_ts, pred.p90_ts), "confidence": 0.8},
-                    "source": pred.source if (pred.source != "model" or use_live) else "model",
-                    "model_version": pred.model_version,
-                    "ghost": {**gstate, "prior_prob": prior},
-                    "tracking": tracking,
-                    "status_text": "Tracking" if tracking else "Not yet tracking",
-                }
-                out.append(row)
-                c.prediction_log.append({"trip_id": tid, "stop_id": stop_id, "made_at": now, "p10": pred.p10_ts,
-                                         "p50": pred.p50_ts, "p90": pred.p90_ts, "model_version": pred.model_version,
-                                         "features": pred.features})
+                cands.append((tid, p, d, sched, live, use_live, dict(
+                    route_id=p.route_id, direction_id=p.direction_id, stop_id=stop_id, sched_ts=sched,
+                    sched_local_hour=local_hour, current_delay_s=cur_delay if use_live else None, live=use_live,
+                    pattern=p, stop_index=i, last_stop_index=live["last_stop_index"], ref=ref, now=now,
+                    service_date=d)))
+        if hasattr(c.predictor, "predict_many"):
+            preds = c.predictor.predict_many([k for *_, k in cands])  # one batched model call per request
+        else:
+            preds = [c.predictor.predict(**k) for *_, k in cands]
+        from .predict import Prediction
+
+        for (tid, p, d, sched, live, use_live, _k), pred in zip(cands, preds):
+            agency_ts = (live.get("agency_preds") or {}).get(stop_id) if health["healthy"] else None
+            if pred.source != "model" and agency_ts is not None:
+                # agency prediction: centre on it, keep the historical spread as the honest range
+                q10, q50, q90 = pred.features.get("hist") or [-60.0, 60.0, 360.0]
+                pred = Prediction(max(now, agency_ts + (q10 - q50)), max(now, agency_ts),
+                                  max(now, agency_ts + (q90 - q50)), "agency", "mbta-tripupdates",
+                                  {**pred.features, "agency_ts": agency_ts})
+            if pred.p90_ts < now - 120:
+                continue
+            gkey = f"{tid}@{d.isoformat()}"
+            ghost = c.pipeline.state.get_ghost(gkey)
+            if not health["healthy"]:
+                gstate = {"state": "unknown", "reason": "feed is stale or unhealthy; showing schedule plus "
+                          "historical ranges", "def_version": definitions.GHOST_DEF_VERSION}
+            elif ghost:
+                gstate = {"state": ghost["state"], "reason": ghost["reason"], "def_version": ghost["def_version"]}
+            else:
+                gstate = {"state": "unknown", "reason": "not evaluated yet", "def_version": definitions.GHOST_DEF_VERSION}
+            prior = c.pipeline.priors.get(tid)
+            tracking = live["last_seen"] is not None and now - live["last_seen"] <= 600
+            out.append({
+                "trip_id": tid, "route_id": p.route_id, "direction_id": p.direction_id,
+                "headsign": str(c.net._trip_meta.loc[tid].get("trip_headsign", "")),
+                "scheduled_utc": _iso(sched),
+                "predicted": {"p10_utc": _iso(pred.p10_ts), "p50_utc": _iso(pred.p50_ts), "p90_utc": _iso(pred.p90_ts),
+                              "range_text": range_words(now, pred.p10_ts, pred.p90_ts), "confidence": 0.8},
+                "source": pred.source,
+                "model_version": pred.model_version,
+                "ghost": {**gstate, "prior_prob": prior},
+                "tracking": tracking,
+                "status_text": "Tracking" if tracking else "Not yet tracking",
+            })
+            c.prediction_log.append({"trip_id": tid, "stop_id": stop_id, "made_at": now, "p10": pred.p10_ts,
+                                     "p50": pred.p50_ts, "p90": pred.p90_ts, "model_version": pred.model_version,
+                                     "features": pred.features})
         if len(c.prediction_log) > 50_000:
             del c.prediction_log[:10_000]
         out.sort(key=lambda r: r["predicted"]["p50_utc"])

@@ -105,6 +105,13 @@ class Network:
         return expand_service(self.calendar, self.calendar_dates, d, d)[d]
 
     def trips_on(self, d: date, route_ids: set[str] | None = None) -> list[str]:
+        key = (d, frozenset(route_ids) if route_ids else None)
+        cache = self.__dict__.setdefault("_trips_on_cache", {})
+        if key not in cache:
+            cache[key] = self._trips_on(d, route_ids)
+        return cache[key]
+
+    def _trips_on(self, d: date, route_ids: set[str] | None = None) -> list[str]:
         sids = self.active_services(d)
         t = self.trips_df[self.trips_df["service_id"].isin(sids)]
         if route_ids:

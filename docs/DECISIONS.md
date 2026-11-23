@@ -47,3 +47,6 @@ One line each: decision — reason — alternative considered.
 - Recorded-hour determinism check uses a closed window ending 30 s before the newest snapshot — the live recorder appends during the eval — open window.
 - CI has no lake data (raw data is never committed), so data-dependent tests/evals skip in CI; the fast eval subset runs fully locally — commit sample data.
 - Phase 7 (Azure/Phase C prep: infra README, Bicep stubs, Azure adapter stubs) skipped at the developer's request mid-run — they will do the cloud work themselves.
+- Live outputs mirrored to the operational DB every 60 s of event time (vehicle_latest upsert, arrival_observed append, latest ghost_eval per trip, prediction_log + delayed-label fill of observed_ts); full history stays in curated Parquet — `PERSIST_LIVE=0` disables — write every event to the DB (too chatty on SQLite).
+- Stop-page source priority: our model (live vehicle with a known delay) > agency TripUpdates prediction (fetched within 2 min) > schedule + history; agency ranges reuse the full historical p10–p90 spread around the agency time — MBTA predictions carry no uncertainty — show agency point estimates.
+- Model A predictions are batched per stop-page request (one model call) and `trips_on` is cached per service date — per-trip calls made the stop page ~0.5–4 s under load — per-trip calls.

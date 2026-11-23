@@ -54,14 +54,17 @@ def decode_trip_updates(payload: bytes, fetch_ts: float, source: str = "live",
         if route_filter is not None and rid not in route_filter:
             continue
         first = None
+        preds: dict[str, float] = {}
         for stu in tu.stop_time_update:
             t = stu.arrival.time or stu.departure.time
             if t:
-                first = float(t)
-                break
+                if first is None:
+                    first = float(t)
+                if stu.stop_id:
+                    preds[stu.stop_id] = float(t)
         out.append(TripUpdateEvent(trip_id=tu.trip.trip_id, route_id=rid, fetch_ts=fetch_ts,
                                    vehicle_id=tu.vehicle.id or None, has_prediction=first is not None,
-                                   first_pred_ts=first, source=source))
+                                   first_pred_ts=first, source=source, stop_preds=preds))
     out.append(FeedFetchEvent("TripUpdates", fetch_ts, float(msg.header.timestamp or fetch_ts), len(msg.entity),
                               source))
     return out

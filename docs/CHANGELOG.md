@@ -36,3 +36,8 @@
 ## Wrap-up
 - Public API keys (hashed) + per-key/anonymous token-bucket quotas with RateLimit headers; drift PSI in /admin/v1/models; models retrained and re-pinned via the promotion rule (Model A 95.6 s MAE, 79.5% coverage; Model B Brier 0.01748).
 - docs: methodology.md, threat-model.md, ADR stubs, BLOCKERS, README, MORNING_REPORT. Phase 7 (Azure) skipped at the developer's request.
+
+## Follow-ups (after the overnight run)
+- Operational DB sink for live outputs (vehicles, arrivals, ghost evaluations, prediction log with delayed labels).
+- Agency TripUpdates predictions as the third stop-page source.
+- Batched Model A inference + cached service-day trips (stop page back under 300 ms p95).

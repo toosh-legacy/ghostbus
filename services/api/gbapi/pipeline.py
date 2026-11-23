@@ -40,7 +40,7 @@ class PipelineStatus:
 
 class LivePipeline:
     def __init__(self, net: Network, routes: set[str], mode: str = "tail", speed: float = 20.0,
-                 scenario: str = "normal", priors: dict | None = None) -> None:
+                 scenario: str = "normal", priors: dict | None = None, persist: bool = False) -> None:
         self.net = net
         self.routes = routes
         self.bc = Broadcaster()
@@ -51,6 +51,17 @@ class LivePipeline:
         self.writer = CuratedWriter(get_settings().lake_dir / "curated", f"{mode}-{int(time.time())}")
         self._task: asyncio.Task | None = None
         self._last_ts: float | None = None
+        self.prediction_log: list[dict] | None = None  # set by the API (shared with the stop page)
+        self.db_sink = None
+        self._last_db_flush = float("-inf")
+        self.db_flush_every_s = 60.0
+        if persist:
+            from gbstream.dbsink import DbSink
+
+            try:
+                self.db_sink = DbSink()
+            except Exception as e:  # noqa: BLE001 - DB is optional for the live pipeline
+                log.warning("operational DB sink disabled: %s", e)
 
     def _new_proc(self, schedule=None) -> Processor:
         return Processor(self.net, live_state=self.state, broadcaster=self.bc, route_ids=self.routes,
@@ -74,6 +85,12 @@ class LivePipeline:
         self.status.snapshots += 1
         self.status.last_wall_update = time.time()
         self.writer.maybe_flush(self.proc)
+        if self.db_sink is not None and self.proc.clock - self._last_db_flush >= self.db_flush_every_s:
+            self._last_db_flush = self.proc.clock
+            try:
+                self.db_sink.flush(self.proc, self.prediction_log)
+            except Exception as e:  # noqa: BLE001
+                log.warning("DB flush failed: %s", e)
 
     async def _run(self) -> None:
         try:
@@ -133,4 +150,6 @@ class LivePipeline:
             sim = await asyncio.to_thread(simulate, self.net, self.status.scenario or "normal", DEFAULT_DATE,
                                           7.0, 2.0, sorted(self.routes))
             self.proc = self._new_proc(schedule=sim.schedule)
+            if self.db_sink is not None:
+                self.db_sink._arr_i = 0
             await self._paced(batches_from_events(sim.events))

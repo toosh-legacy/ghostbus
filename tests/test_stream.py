@@ -397,3 +397,63 @@ def test_ghost_v11_possible_reassignment_is_elevated_not_high():
     assert g.def_version == "ghost-def v1.1"
     # without the signal, the same trip is high
     assert evaluate_trip(10_000 + 900, TRIP, OK, None, None).state == "high"
+
+
+@needs_static
+def test_db_sink_persists_live_outputs_and_joins_labels(net):
+    from sqlalchemy.orm import sessionmaker
+
+    from gbcore.db import Base, PredictionLog, make_engine
+    from gbsim.evaluate import DEFAULT_DATE
+    from gbsim.simulator import simulate
+    from gbstream.dbsink import DbSink
+    from gbstream.processor import Processor
+
+    eng = make_engine("sqlite://")
+    Base.metadata.create_all(eng)
+    sink = DbSink(sessionmaker(eng, expire_on_commit=False))
+    sim = simulate(net, "normal", DEFAULT_DATE, hours=1.0, route_ids=["1"])
+    p = Processor(net, schedule=sim.schedule)
+    w0 = sim.window[0]
+    first = [e for e in sim.events if e.fetch_ts < w0 + 1200]
+    for e in first:
+        p.process(e)
+    t = sim.schedule[0]
+    pat = net.pattern(t.trip_id)
+    log = [{"trip_id": t.trip_id, "stop_id": pat.stop_ids[-1], "made_at": w0, "p10": 0.0, "p50": 1.0, "p90": 2.0,
+            "model_version": "test", "features": {"delay_k": 30.0}}]
+    sink.flush(p, log)
+    for e in sim.events[len(first):]:
+        p.process(e)
+    p.flush()
+    out = sink.flush(p, log)
+    c = sink.counts()
+    assert c["vehicle_latest"] > 0 and c["arrival_observed"] == len(p.arrivals) and c["ghost_eval"] > 0
+    assert c["prediction_log"] == 1 and out["predictions"] == 0  # not re-inserted on the second flush
+    with sink.Session() as s:
+        row = s.query(PredictionLog).one()
+        if any(a.trip_id == t.trip_id and a.stop_id == pat.stop_ids[-1] for a in p.arrivals):
+            assert row.observed_ts is not None
+
+
+@needs_static
+def test_recorded_trip_updates_carry_agency_stop_predictions(net):
+    import gzip
+
+    from gbschemas.events import TripUpdateEvent
+    from gbstream.decoder import decode
+    from gbstream.processor import Processor
+    from gbstream.replay import list_snapshots
+
+    raw = get_settings().lake_dir / "raw"
+    tus = [s for s in list_snapshots(raw) if s[1] == "TripUpdates"]
+    if not tus:
+        pytest.skip("no recorded TripUpdates")
+    ts, feed, path = tus[-1]
+    evs = decode(feed, gzip.decompress(path.read_bytes()), ts, "replay", {"1", "111"})
+    tu = [e for e in evs if isinstance(e, TripUpdateEvent) and e.stop_preds]
+    assert tu and all(isinstance(v, float) for v in tu[0].stop_preds.values())
+    p = Processor(net, schedule=[])
+    for e in evs:
+        p.process(e)
+    assert p.trip_live(tu[0].trip_id)["agency_preds"] == tu[0].stop_preds

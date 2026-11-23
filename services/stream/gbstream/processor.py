@@ -120,6 +120,7 @@ class Processor:
         self._all_by_trip: dict[str, ScheduledTrip] | None = None
         self._trip_last_arrival: dict[str, tuple[int, float, str]] = {}  # trip -> (stop_index, ts, stop_id)
         self._tu_last: dict[str, float] = {}
+        self._tu_preds: dict[str, tuple[float, dict[str, float]]] = {}  # trip -> (fetch_ts, stop -> predicted ts)
         self._last_vp_fetch: float | None = None
         self._first_fetch: float | None = None
         self._last_vp_rate: int | None = None
@@ -139,6 +140,8 @@ class Processor:
             self._on_vehicle(e)
         elif isinstance(e, TripUpdateEvent):
             self._tu_last[e.trip_id] = e.fetch_ts if e.has_prediction else self._tu_last.get(e.trip_id, 0)
+            if e.stop_preds:
+                self._tu_preds[e.trip_id] = (e.fetch_ts, e.stop_preds)
             self._advance_clock(e.fetch_ts)
         elif isinstance(e, FeedFetchEvent):
             self.stats.fetches += 1
@@ -164,7 +167,14 @@ class Processor:
         la = self._trip_last_arrival.get(trip_id)
         return {"vehicle_id": self._trip_vehicle.get(trip_id), "last_seen": self._trip_last_seen.get(trip_id),
                 "last_stop_index": la[0] if la else None, "last_arrival_ts": la[1] if la else None,
-                "has_tu": trip_id in self._tu_last}
+                "has_tu": trip_id in self._tu_last, "agency_preds": self._agency_preds(trip_id)}
+
+    def _agency_preds(self, trip_id: str) -> dict[str, float] | None:
+        """Agency (TripUpdates) per-stop predictions, only if fetched within the last 2 minutes of event time."""
+        tp = self._tu_preds.get(trip_id)
+        if tp is None or self.clock - tp[0] > 120:
+            return None
+        return tp[1]
 
     def health(self) -> dict:
         h = feed_health(self.clock, self._last_vp_fetch, self._last_vp_rate, self._typical(self.clock))

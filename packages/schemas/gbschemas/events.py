@@ -42,6 +42,7 @@ class TripUpdateEvent:
     first_pred_ts: float | None = None
     source: str = "live"
     kind: str = "trip_update"
+    stop_preds: dict[str, float] = field(default_factory=dict)  # stop_id -> predicted arrival (UTC epoch s)
 
 
 @dataclass(slots=True)
