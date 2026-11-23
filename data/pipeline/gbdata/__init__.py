@@ -1,0 +1,1 @@
+"""GhostBus package."""

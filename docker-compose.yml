@@ -1,0 +1,42 @@
+# Full-mode local stack (section 7.1 / 7.3). Lite mode needs none of this.
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: ghostbus
+      POSTGRES_PASSWORD: ghostbus
+      POSTGRES_DB: ghostbus
+    ports: ["15433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostbus"]
+      interval: 5s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports: ["10010:10000"]
+    command: azurite-blob --blobHost 0.0.0.0 --loose
+  api:
+    build: { context: ., dockerfile: services/api/Dockerfile }
+    profiles: ["app"]
+    environment:
+      MODE: full
+      DATABASE_URL: postgresql+psycopg://ghostbus:ghostbus@postgres:5432/ghostbus
+      REDIS_URL: redis://redis:6379/0
+      STREAM_BUS: redis
+      LIVE_STATE: redis
+    ports: ["8000:8000"]
+    depends_on: [postgres, redis]
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    profiles: ["obs"]
+    ports: ["16686:16686", "4317:4317"]
+volumes:
+  pgdata: {}

@@ -1,0 +1,34 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Lint
+        run: uv run ruff check .
+      - name: Type check (services, packages)
+        run: uv run mypy packages services --ignore-missing-imports || true
+      - name: Tests (lite mode; full-mode tests auto-skip without services)
+        run: uv run pytest
+      - name: Fast evals (simulator + copilot + red team)
+        run: uv run python -m gbevals.run --fast
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci || npm install
+      - run: npm run build --if-present
