@@ -17,3 +17,8 @@
 - Reliability metrics (OTP, headway adherence, EWT, bunching, missed-trip rate) by route/month/day type/time band; historical missed-trip labels with unknown handling; DuckDB analytics DB with allowlisted views.
 - Operational DB (SQLAlchemy + Alembic, SQLite lite / Postgres full), seeded with the static network and manifest.
 - FastAPI: all section-13 endpoints incl. SSE stream, CSV export, methodology, admin views, problem+json errors; OpenAPI exported to packages/schemas/openapi.json.
+
+## Phase 4 — machine learning
+- Model A: quantile HistGradientBoosting (p10/p50/p90) + conformalized quantile regression; 3-fold rolling-origin backtest: p50 MAE 95.7 s vs best baseline (propagation) 139.9 s (31.6% better); 80% coverage 79.3%.
+- Model B: missed-trip probability (HGB + isotonic): Brier 0.01757 vs rolling-28d baseline 0.01767 (beats), ROC-AUC 0.60, PR-AUC 0.036 vs base rate ~0.018.
+- ModelRegistry with pinned versions and the 1% promotion rule; serving in the stop page (Model A) and ghost priors (Model B); delayed-label join + PSI utilities; leakage tests.

@@ -32,3 +32,10 @@ One line each: decision — reason — alternative considered.
 - API "now" = processor event clock (falls back to wall clock with no events) — replay and live give identical stop pages — wall clock.
 - Stop page "Not yet tracking" + elevated risk come from the ghost rules; when feed is stale the API forces ghost state unknown and drops live delay (schedule + historical range) — spec F2 AC3.
 - Request logging middleware logs method + path only (never query strings) and uvicorn access log is disabled — nearby-stop coordinates are never logged (spec 15).
+- Model A samples: 12% of trips (stable hash), horizons 1–5 timepoints, train capped at 400k rows per fold — fits the overnight time budget — all pairs (~12 M rows).
+- Model A "recent segment delay" = median of (delay_j − delay_k) over the last 3 same-day trips whose segment completed strictly before t_pred (DuckDB ASOF join) — spec feature, leakage-safe by construction — per-stop recent delay.
+- D2 pairs whose recorded actual at j is not after the actual at k are dropped from Model A samples — out-of-order records in the source; a target cannot precede the prediction — keep them.
+- 20% of training rows have live-only features (recent segment, headway, delay change) blanked — those are often unavailable when serving from GTFS-RT — train only on complete rows.
+- Pinned Model A = the last backtest fold's model (trained through 2025-12-10, calibrated on the following week) — its coverage/MAE are measured on held-out weeks — refit on all data without a held-out check.
+- Model B chosen by mean Brier across folds (HGB + isotonic); it beats the rolling 28-day baseline but only ties the overall-rate baseline — signal from pre-4 AM features is weak; reported honestly — tune more features.
+- Model classes live in gbml/models.py — the first artifacts pickled under `__main__` were unloadable from the API — custom unpickler.

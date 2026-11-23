@@ -71,6 +71,7 @@ def read_only_connection(path: Path | None = None) -> duckdb.DuckDBPyConnection:
     """Copilot connection: read-only, no external access (no file/URL reads), bounded resources."""
     con = duckdb.connect(str(path or db_path()), read_only=True,
                          config={"enable_external_access": False, "threads": 2, "memory_limit": "1GB"})
+    con.execute("SET enable_progress_bar = false")
     return con
 
 
