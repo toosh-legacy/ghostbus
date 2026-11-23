@@ -1,0 +1,637 @@
+{
+  "sources": {
+    "arrdep_2025": {
+      "bytes": 404153122,
+      "downloaded_at": "2026-11-23T21:04:26.555690+00:00",
+      "license": "CC0",
+      "months": [
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "pilot_routes": [
+        "111",
+        "743",
+        "23",
+        "28",
+        "741",
+        "1",
+        "39",
+        "109",
+        "66",
+        "77"
+      ],
+      "rows_pilot": 3850520,
+      "schema_ok": true,
+      "sha256": "eae5344638e61319185d5c1c996f8bec3e9a71879702b3fc34d9991f04ce7706",
+      "source": "real",
+      "url": "https://www.arcgis.com/sharing/rest/content/items/924df13d845f4907bb6a6c3ed380d57a/data"
+    },
+    "gtfs_archive_20250626": {
+      "bytes": 11832446,
+      "end_date": "2025-07-02",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4492,
+      "sha256": "1268b9d7d8959251f17d0332a861bd45eee840d7efeba444b1e7ab2ed7c373b5",
+      "source": "real",
+      "start_date": "2025-06-26",
+      "url": "https://cdn.mbtace.com/archive/20250626.zip"
+    },
+    "gtfs_archive_20250703": {
+      "bytes": 11788168,
+      "end_date": "2025-07-08",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 11933,
+      "sha256": "1a82f076da5b7b78e90c99f344fa16d4ecc36f5d4fcc5ebadd938c02a7cc2e5d",
+      "source": "real",
+      "start_date": "2025-07-03",
+      "url": "https://cdn.mbtace.com/archive/20250703.zip"
+    },
+    "gtfs_archive_20250709": {
+      "bytes": 10286669,
+      "end_date": "2025-07-13",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10254,
+      "sha256": "a5dd7510bbe16ff070449dd54eeb2ccc02955212989920c26889e9e829d0c80b",
+      "source": "real",
+      "start_date": "2025-07-09",
+      "url": "https://cdn.mbtace.com/archive/20250709.zip"
+    },
+    "gtfs_archive_20250714": {
+      "bytes": 10186053,
+      "end_date": "2025-07-14",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "155afd70b3449eaa8511f123a81a2a679d386fa33a1e25d69f1bc6884a05aa7d",
+      "source": "real",
+      "start_date": "2025-07-14",
+      "url": "https://cdn.mbtace.com/archive/20250714.zip"
+    },
+    "gtfs_archive_20250715": {
+      "bytes": 10191122,
+      "end_date": "2025-07-17",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 6738,
+      "sha256": "af3151920b3a58d4eb07a9e8013de7a31cab673f4f3f6e1106313bb8c9bcb92d",
+      "source": "real",
+      "start_date": "2025-07-15",
+      "url": "https://cdn.mbtace.com/archive/20250715.zip"
+    },
+    "gtfs_archive_20250718": {
+      "bytes": 10200162,
+      "end_date": "2025-07-20",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 5762,
+      "sha256": "63f9fb35e942571371c506e93fc80b37fb54de71e05e5ef8f64a34523690d72b",
+      "source": "real",
+      "start_date": "2025-07-18",
+      "url": "https://cdn.mbtace.com/archive/20250718.zip"
+    },
+    "gtfs_archive_20250721": {
+      "bytes": 10030502,
+      "end_date": "2025-07-22",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4492,
+      "sha256": "18bd4c992e73c811a5a3b94f20aea66ff56def867bf61b62152514ea3b27183f",
+      "source": "real",
+      "start_date": "2025-07-21",
+      "url": "https://cdn.mbtace.com/archive/20250721.zip"
+    },
+    "gtfs_archive_20250723": {
+      "bytes": 10030814,
+      "end_date": "2025-07-23",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "132da009f6cab165896af2cd2b29d938e8ec21327d0e4702fdae2aa4547b2293",
+      "source": "real",
+      "start_date": "2025-07-23",
+      "url": "https://cdn.mbtace.com/archive/20250723.zip"
+    },
+    "gtfs_archive_20250724": {
+      "bytes": 10145821,
+      "end_date": "2025-07-27",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 8008,
+      "sha256": "12bc1fe65d855aa893e3f53a61658cee45cfb600eae3f8ef3387a895c4da0fcd",
+      "source": "real",
+      "start_date": "2025-07-24",
+      "url": "https://cdn.mbtace.com/archive/20250724.zip"
+    },
+    "gtfs_archive_20250728": {
+      "bytes": 10038348,
+      "end_date": "2025-07-28",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "fbee49da27d041dd32acd903d511b210c96ceee916a715081f8e1a0662acfc24",
+      "source": "real",
+      "start_date": "2025-07-28",
+      "url": "https://cdn.mbtace.com/archive/20250728.zip"
+    },
+    "gtfs_archive_20250729": {
+      "bytes": 10066647,
+      "end_date": "2025-07-29",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "f63aa1ead6a3ef3dea4d9fb8a6246375a7b2146f3b3a74cefa6e40f2100cc6cf",
+      "source": "real",
+      "start_date": "2025-07-29",
+      "url": "https://cdn.mbtace.com/archive/20250729.zip"
+    },
+    "gtfs_archive_20250730": {
+      "bytes": 10072455,
+      "end_date": "2025-07-30",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "49a3a9fc9052adc709a5aba1e9d68ecec008299b36d3911929f056853732579f",
+      "source": "real",
+      "start_date": "2025-07-30",
+      "url": "https://cdn.mbtace.com/archive/20250730.zip"
+    },
+    "gtfs_archive_20250731": {
+      "bytes": 10093073,
+      "end_date": "2025-08-04",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10254,
+      "sha256": "f1d4d89d993242c26d5ae9b0ee6d477dd751c101ee0d7ff888372ad29514953e",
+      "source": "real",
+      "start_date": "2025-07-31",
+      "url": "https://cdn.mbtace.com/archive/20250731.zip"
+    },
+    "gtfs_archive_20250805": {
+      "bytes": 10081224,
+      "end_date": "2025-08-05",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "2e6ab50262d72feaa3457771abe2ba578cd72519d03faa099dac019fe5d9ba61",
+      "source": "real",
+      "start_date": "2025-08-05",
+      "url": "https://cdn.mbtace.com/archive/20250805.zip"
+    },
+    "gtfs_archive_20250806": {
+      "bytes": 10062057,
+      "end_date": "2025-08-06",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "842e9a677a0ff4f1bfef84508aac01054578322f3215b3be0e37da35d9f4188c",
+      "source": "real",
+      "start_date": "2025-08-06",
+      "url": "https://cdn.mbtace.com/archive/20250806.zip"
+    },
+    "gtfs_archive_20250807": {
+      "bytes": 25659908,
+      "end_date": "2025-08-10",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 8008,
+      "sha256": "9c0c56c2e6a97d51fb281a6b5e4a85a4c8785b9397d63bfdf6cb589029ee2f73",
+      "source": "real",
+      "start_date": "2025-08-07",
+      "url": "https://cdn.mbtace.com/archive/20250807.zip"
+    },
+    "gtfs_archive_20250811": {
+      "bytes": 25596227,
+      "end_date": "2025-08-12",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4492,
+      "sha256": "619aa45984242f9db978f2b336145780b9d4c25dbb737699c550d7088f6a9d83",
+      "source": "real",
+      "start_date": "2025-08-11",
+      "url": "https://cdn.mbtace.com/archive/20250811.zip"
+    },
+    "gtfs_archive_20250813": {
+      "bytes": 25526478,
+      "end_date": "2025-08-13",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "ac384de305d04acc18ee98f34498c6dbb9f0420979ed739578941b9b7e4fe0a1",
+      "source": "real",
+      "start_date": "2025-08-13",
+      "url": "https://cdn.mbtace.com/archive/20250813.zip"
+    },
+    "gtfs_archive_20250814": {
+      "bytes": 25532622,
+      "end_date": "2025-08-17",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 8008,
+      "sha256": "7bca90f341d7b4f75a878828f4f1168ddc021e8b9a031e20b5692c4ed12a3b28",
+      "source": "real",
+      "start_date": "2025-08-14",
+      "url": "https://cdn.mbtace.com/archive/20250814.zip"
+    },
+    "gtfs_archive_20250818": {
+      "bytes": 23993184,
+      "end_date": "2025-08-18",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "b0707395153125c393194569962cf4541af7c4dc8fb696f5f5771de6deb4cb75",
+      "source": "real",
+      "start_date": "2025-08-18",
+      "url": "https://cdn.mbtace.com/archive/20250818.zip"
+    },
+    "gtfs_archive_20250819": {
+      "bytes": 24012298,
+      "end_date": "2025-08-19",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2246,
+      "sha256": "7bd231436215c4c3804963e7c64243abf641006f15b0e2cc3d54614c60316cd3",
+      "source": "real",
+      "start_date": "2025-08-19",
+      "url": "https://cdn.mbtace.com/archive/20250819.zip"
+    },
+    "gtfs_archive_20250820": {
+      "bytes": 24672414,
+      "end_date": "2025-08-21",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4492,
+      "sha256": "b5d8d1067fb8ce8494b8af3ed76d844c1499fd33b8db0b7ceb4dc5af83ac6648",
+      "source": "real",
+      "start_date": "2025-08-20",
+      "url": "https://cdn.mbtace.com/archive/20250820.zip"
+    },
+    "gtfs_archive_20250822": {
+      "bytes": 24702759,
+      "end_date": "2025-08-26",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10480,
+      "sha256": "74f4d31df34069c02f5e10743f07c7c26b008e5e33633a1cb4b3ed2c69f194f7",
+      "source": "real",
+      "start_date": "2025-08-22",
+      "url": "https://cdn.mbtace.com/archive/20250822.zip"
+    },
+    "gtfs_archive_20250827": {
+      "bytes": 19595806,
+      "end_date": "2025-08-27",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2338,
+      "sha256": "f36dd5b963e2b3b7e4d9743c72ba2fe05cf5e92734f84b9e0f4a36ca14506384",
+      "source": "real",
+      "start_date": "2025-08-27",
+      "url": "https://cdn.mbtace.com/archive/20250827.zip"
+    },
+    "gtfs_archive_20250828": {
+      "bytes": 19611879,
+      "end_date": "2025-08-31",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 8318,
+      "sha256": "0d1801af6dde38605bf14d956521f0686e9023a2d4b95b06284cf8d6b00c3b4a",
+      "source": "real",
+      "start_date": "2025-08-28",
+      "url": "https://cdn.mbtace.com/archive/20250828.zip"
+    },
+    "gtfs_archive_20250901": {
+      "bytes": 19682234,
+      "end_date": "2025-09-03",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 6397,
+      "sha256": "43ab9d6c5f1ee6530c63355b0611cdc99f7ed163d1c15976a4d071f775269a8e",
+      "source": "real",
+      "start_date": "2025-09-01",
+      "url": "https://cdn.mbtace.com/archive/20250901.zip"
+    },
+    "gtfs_archive_20250904": {
+      "bytes": 19659677,
+      "end_date": "2025-09-08",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10656,
+      "sha256": "0530bde49c31b2d80c71e74afdb61e15fb3d913998e41ee56655266e4b940b09",
+      "source": "real",
+      "start_date": "2025-09-04",
+      "url": "https://cdn.mbtace.com/archive/20250904.zip"
+    },
+    "gtfs_archive_20250909": {
+      "bytes": 19120904,
+      "end_date": "2025-09-11",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 7014,
+      "sha256": "47c060da93ce159a9454c099150303074aa049a5f346ccf0372b4c0ca796a9e5",
+      "source": "real",
+      "start_date": "2025-09-09",
+      "url": "https://cdn.mbtace.com/archive/20250909.zip"
+    },
+    "gtfs_archive_20250912": {
+      "bytes": 18994776,
+      "end_date": "2025-09-14",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 5980,
+      "sha256": "33a8b997bdb9afeb6effef4a4c0ec4f416bfe2faaaf44120aa18564c3bdf5c77",
+      "source": "real",
+      "start_date": "2025-09-12",
+      "url": "https://cdn.mbtace.com/archive/20250912.zip"
+    },
+    "gtfs_archive_20250915": {
+      "bytes": 18931900,
+      "end_date": "2025-09-16",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4676,
+      "sha256": "bab370e8e37d42f4b4b60dd7c7628a20e1ca3f0d757b392f7385b7fc7f986226",
+      "source": "real",
+      "start_date": "2025-09-15",
+      "url": "https://cdn.mbtace.com/archive/20250915.zip"
+    },
+    "gtfs_archive_20250917": {
+      "bytes": 19411042,
+      "end_date": "2025-09-21",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10656,
+      "sha256": "3ff04fce2db01b80ad165524da479321cf968c984b79b4611899e7dfb2dbfe27",
+      "source": "real",
+      "start_date": "2025-09-17",
+      "url": "https://cdn.mbtace.com/archive/20250917.zip"
+    },
+    "gtfs_archive_20250922": {
+      "bytes": 19352271,
+      "end_date": "2025-09-22",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2338,
+      "sha256": "ccc96d5eaaec2457cb13daead4943774a9c7dda8ffa34bafdacc191965ff5f91",
+      "source": "real",
+      "start_date": "2025-09-22",
+      "url": "https://cdn.mbtace.com/archive/20250922.zip"
+    },
+    "gtfs_archive_20250923": {
+      "bytes": 19351539,
+      "end_date": "2025-09-24",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4676,
+      "sha256": "9b676c132f298101543367d25809d25aca1099057397a8dbefc08e389500c5d2",
+      "source": "real",
+      "start_date": "2025-09-23",
+      "url": "https://cdn.mbtace.com/archive/20250923.zip"
+    },
+    "gtfs_archive_20250925": {
+      "bytes": 19972278,
+      "end_date": "2025-10-06",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 25988,
+      "sha256": "fb29ab5d874b2a95a3545e17c3e7dd1b098b4a42f80f1779b0a96459bc0d1328",
+      "source": "real",
+      "start_date": "2025-09-25",
+      "url": "https://cdn.mbtace.com/archive/20250925.zip"
+    },
+    "gtfs_archive_20251007": {
+      "bytes": 19512067,
+      "end_date": "2025-10-13",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 14948,
+      "sha256": "e5fd8249d964c00e4aa219c2e9d64d8aa8cb5a289c3ddfefcfeac8ff82e2433a",
+      "source": "real",
+      "start_date": "2025-10-07",
+      "url": "https://cdn.mbtace.com/archive/20251007.zip"
+    },
+    "gtfs_archive_20251014": {
+      "bytes": 17550227,
+      "end_date": "2025-10-20",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 15332,
+      "sha256": "cf3a3e4ba8d88f28e87ec5e5504225650145a6bb56b9f0dde2b4f78cf735c898",
+      "source": "real",
+      "start_date": "2025-10-14",
+      "url": "https://cdn.mbtace.com/archive/20251014.zip"
+    },
+    "gtfs_archive_20251021": {
+      "bytes": 18351003,
+      "end_date": "2025-10-27",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 15332,
+      "sha256": "b669a3e3538f8717ab8335e751a2c42d9da7194a6d569f02c4bd88ec53b6aa50",
+      "source": "real",
+      "start_date": "2025-10-21",
+      "url": "https://cdn.mbtace.com/archive/20251021.zip"
+    },
+    "gtfs_archive_20251028": {
+      "bytes": 17933718,
+      "end_date": "2025-10-29",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4676,
+      "sha256": "24454c096f0435fb69de4d8601c97bd56a173e79cc0c39f7e08c5e8b9c0da4f9",
+      "source": "real",
+      "start_date": "2025-10-28",
+      "url": "https://cdn.mbtace.com/archive/20251028.zip"
+    },
+    "gtfs_archive_20251030": {
+      "bytes": 18034841,
+      "end_date": "2025-10-30",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2338,
+      "sha256": "93693dc9ed07597aa5f87520beaab5a77cd4c58e9b5c33379ca22f892f601ebd",
+      "source": "real",
+      "start_date": "2025-10-30",
+      "url": "https://cdn.mbtace.com/archive/20251030.zip"
+    },
+    "gtfs_archive_20251031": {
+      "bytes": 17954857,
+      "end_date": "2025-11-04",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10656,
+      "sha256": "6377fc36d8c381f3ad3e0260df08c0056bb50c85f3aa29a2c8e8cf5868af59c6",
+      "source": "real",
+      "start_date": "2025-10-31",
+      "url": "https://cdn.mbtace.com/archive/20251031.zip"
+    },
+    "gtfs_archive_20251105": {
+      "bytes": 17809787,
+      "end_date": "2025-11-06",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4676,
+      "sha256": "0b167036dd3347432178cd9776f81708feaf6138e3cf877ac5b90652d3b2a4b2",
+      "source": "real",
+      "start_date": "2025-11-05",
+      "url": "https://cdn.mbtace.com/archive/20251105.zip"
+    },
+    "gtfs_archive_20251107": {
+      "bytes": 17683306,
+      "end_date": "2025-11-11",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10616,
+      "sha256": "ba637b8e214177a834b0ea8b680b1e93cf9efc4d4864d18cf82aa29231e490bb",
+      "source": "real",
+      "start_date": "2025-11-07",
+      "url": "https://cdn.mbtace.com/archive/20251107.zip"
+    },
+    "gtfs_archive_20251112": {
+      "bytes": 16334407,
+      "end_date": "2025-11-13",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4676,
+      "sha256": "712dc07be10b16a0782427e365f5c58640184887ea6cf8677ac432fb0231be89",
+      "source": "real",
+      "start_date": "2025-11-12",
+      "url": "https://cdn.mbtace.com/archive/20251112.zip"
+    },
+    "gtfs_archive_20251114": {
+      "bytes": 16201714,
+      "end_date": "2025-11-17",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 8318,
+      "sha256": "2798dd4dbda7f2360d2ce0002abad03c8da365ed29a389706854e1df64efa7ab",
+      "source": "real",
+      "start_date": "2025-11-14",
+      "url": "https://cdn.mbtace.com/archive/20251114.zip"
+    },
+    "gtfs_archive_20251118": {
+      "bytes": 16160571,
+      "end_date": "2025-11-18",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2338,
+      "sha256": "01e453055c56dc8458b5847849229818621ceaae68a3b040ebc77c39ee6cefe9",
+      "source": "real",
+      "start_date": "2025-11-18",
+      "url": "https://cdn.mbtace.com/archive/20251118.zip"
+    },
+    "gtfs_archive_20251119": {
+      "bytes": 16158961,
+      "end_date": "2025-11-23",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10781,
+      "sha256": "9462e57493a3f76af26a462410a692794555607cd26f47a76d620f07aa90e60f",
+      "source": "real",
+      "start_date": "2025-11-19",
+      "url": "https://cdn.mbtace.com/archive/20251119.zip"
+    },
+    "gtfs_archive_20251124": {
+      "bytes": 16377317,
+      "end_date": "2025-11-26",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 7065,
+      "sha256": "4373ab203660aa38a463a08f651247484fb2565716af6b4fe5783afb4e91f076",
+      "source": "real",
+      "start_date": "2025-11-24",
+      "url": "https://cdn.mbtace.com/archive/20251124.zip"
+    },
+    "gtfs_archive_20251127": {
+      "bytes": 37615198,
+      "end_date": "2025-12-01",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10138,
+      "sha256": "a85a605250e4b82a1589e311ecc22dd5d33617677d34299c7b83070d3b96a6d4",
+      "source": "real",
+      "start_date": "2025-11-27",
+      "url": "https://cdn.mbtace.com/archive/20251127.zip"
+    },
+    "gtfs_archive_20251202": {
+      "bytes": 33327717,
+      "end_date": "2025-12-02",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2338,
+      "sha256": "3e8d6770fcc813529158d18a2b32c227d4e4b543fd626f38f07d498859c250bd",
+      "source": "real",
+      "start_date": "2025-12-02",
+      "url": "https://cdn.mbtace.com/archive/20251202.zip"
+    },
+    "gtfs_archive_20251203": {
+      "bytes": 33327495,
+      "end_date": "2025-12-04",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4676,
+      "sha256": "0a5e86f7f0c8ba7e8a44768fbd71a45e26b5a854c7d5143257e1c9375af48996",
+      "source": "real",
+      "start_date": "2025-12-03",
+      "url": "https://cdn.mbtace.com/archive/20251203.zip"
+    },
+    "gtfs_archive_20251205": {
+      "bytes": 33140833,
+      "end_date": "2025-12-05",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2359,
+      "sha256": "addd40d6529dda1ab92dce7e5d2d246b5b89862083e60427182f0bdcdb233137",
+      "source": "real",
+      "start_date": "2025-12-05",
+      "url": "https://cdn.mbtace.com/archive/20251205.zip"
+    },
+    "gtfs_archive_20251206": {
+      "bytes": 32932301,
+      "end_date": "2025-12-09",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 8297,
+      "sha256": "b12d24f18889319a3c5a64cdb29574a5e84f528697d77ad1e70e6bb3a7596342",
+      "source": "real",
+      "start_date": "2025-12-06",
+      "url": "https://cdn.mbtace.com/archive/20251206.zip"
+    },
+    "gtfs_archive_20251210": {
+      "bytes": 31187629,
+      "end_date": "2025-12-11",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4676,
+      "sha256": "d2c72590b4fb4c3fa9646378c3e7690a685697461921e131f0b62df7f96dd3fe",
+      "source": "real",
+      "start_date": "2025-12-10",
+      "url": "https://cdn.mbtace.com/archive/20251210.zip"
+    },
+    "gtfs_archive_20251212": {
+      "bytes": 30032049,
+      "end_date": "2025-12-15",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 8396,
+      "sha256": "f2c866afdf58139ed7435becb209e7d96148cd7c1cd6a6d275a497e2aaaf892b",
+      "source": "real",
+      "start_date": "2025-12-12",
+      "url": "https://cdn.mbtace.com/archive/20251212.zip"
+    },
+    "gtfs_archive_20251216": {
+      "bytes": 24460399,
+      "end_date": "2025-12-21",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 13186,
+      "sha256": "5ef0044b776c6be8ba14cc4514742364f29eb6502aa1860f76de88eca366f665",
+      "source": "real",
+      "start_date": "2025-12-16",
+      "url": "https://cdn.mbtace.com/archive/20251216.zip"
+    },
+    "gtfs_archive_20251222": {
+      "bytes": 24204183,
+      "end_date": "2025-12-23",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4704,
+      "sha256": "de7ef728f539f7f4170f386acf0f1f5bc220394096a5d802713c0623c5479d14",
+      "source": "real",
+      "start_date": "2025-12-22",
+      "url": "https://cdn.mbtace.com/archive/20251222.zip"
+    },
+    "gtfs_archive_20251224": {
+      "bytes": 24200195,
+      "end_date": "2025-12-28",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 10215,
+      "sha256": "c68d9e7f66269ad9b96643a6b647cc82412f144370f26003482784ad3723e930",
+      "source": "real",
+      "start_date": "2025-12-24",
+      "url": "https://cdn.mbtace.com/archive/20251224.zip"
+    },
+    "gtfs_archive_20251229": {
+      "bytes": 24058910,
+      "end_date": "2025-12-30",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 4652,
+      "sha256": "6ee907520d45bb13a63db4f5354fe2e9d8df22923c2fdcfe5269ab95b9edfc1b",
+      "source": "real",
+      "start_date": "2025-12-29",
+      "url": "https://cdn.mbtace.com/archive/20251229.zip"
+    },
+    "gtfs_archive_20251231": {
+      "bytes": 24069623,
+      "end_date": "2025-12-31",
+      "license": "MassDOT Developers License Agreement",
+      "rows": 2326,
+      "sha256": "c02af93dcf2d12fd32ded171af216e0a6386d7f96fe3426f0fb09dfaa96a21c1",
+      "source": "real",
+      "start_date": "2025-12-31",
+      "url": "https://cdn.mbtace.com/archive/20251231.zip"
+    },
+    "gtfs_current": {
+      "bytes": 19815915,
+      "downloaded_at": "2026-11-23T15:06:07.332251",
+      "license": "MassDOT Developers License Agreement",
+      "sha256": "04cd2571fed0494c0c0dd2e30fa770140fd87ad7b6eb3c40265426c3c43d0772",
+      "source": "real",
+      "url": "https://cdn.mbta.com/MBTA_GTFS.zip"
+    },
+    "scheduled_trips": {
+      "rows": 396625,
+      "source": "real (derived from GTFS archive)"
+    }
+  },
+  "updated_utc": "2026-11-23T21:11:26.689615+00:00"
+}

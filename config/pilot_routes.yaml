@@ -1,0 +1,23 @@
+selection: Top 10 routes by observed timepoint events in MBTA Bus Arrival Departure
+  Times, Jul-Dec 2025
+routes:
+- gtfs_route_id: '111'
+  arrdep_route_id: '111'
+- gtfs_route_id: '743'
+  arrdep_route_id: SL3
+- gtfs_route_id: '23'
+  arrdep_route_id: '23'
+- gtfs_route_id: '28'
+  arrdep_route_id: '28'
+- gtfs_route_id: '741'
+  arrdep_route_id: SL1
+- gtfs_route_id: '1'
+  arrdep_route_id: '01'
+- gtfs_route_id: '39'
+  arrdep_route_id: '39'
+- gtfs_route_id: '109'
+  arrdep_route_id: '109'
+- gtfs_route_id: '66'
+  arrdep_route_id: '66'
+- gtfs_route_id: '77'
+  arrdep_route_id: '77'

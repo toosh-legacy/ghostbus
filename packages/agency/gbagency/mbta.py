@@ -37,6 +37,18 @@ class MBTAAdapter(AgencyAdapter):
             return 1
         raise ValueError(f"unknown MBTA direction label: {label!r}")
 
+    # Arrival/departure data names Silver Line routes "SL1" etc.; GTFS uses numeric route_ids.
+    SILVER_LINE = {"SL1": "741", "SL2": "742", "SL3": "743", "SLW": "746", "SL5": "749", "SL4": "751"}
+
+    def normalize_route_id(self, rid: str) -> str:
+        """D2 route_id -> GTFS route_id ('01' -> '1', 'SL1' -> '741')."""
+        s = str(rid).strip()
+        if s.upper() in self.SILVER_LINE:
+            return self.SILVER_LINE[s.upper()]
+        if s.isdigit():
+            return str(int(s))
+        return s.lstrip("0") or s
+
     @property
     def arrdep_item_ids(self) -> dict[int, str]:
         return {
