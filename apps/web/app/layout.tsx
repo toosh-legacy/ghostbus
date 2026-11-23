@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import "./globals.css";
 import Providers from "./providers";
+import RegisterSW from "@/components/RegisterSW";
 
 export const metadata: Metadata = {
   title: "GhostBus — is my bus actually coming?",
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             ))}
           </nav>
         </header>
+        <RegisterSW />
         <Providers>
           <main id="main" className="mx-auto w-full max-w-4xl flex-1 p-4">
             <Suspense fallback={<p>Loading…</p>}>{children}</Suspense>

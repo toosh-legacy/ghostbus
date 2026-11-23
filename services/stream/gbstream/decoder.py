@@ -99,3 +99,35 @@ def encode_vehicle_positions(events: list[VehicleEvent], header_ts: float) -> by
         v.timestamp = int(e.vehicle_ts)
         v.vehicle.id = e.vehicle_id
     return msg.SerializeToString()
+
+
+EFFECT = {1: "NO_SERVICE", 2: "REDUCED_SERVICE", 3: "SIGNIFICANT_DELAYS", 4: "DETOUR", 5: "ADDITIONAL_SERVICE",
+          6: "MODIFIED_SERVICE", 7: "OTHER_EFFECT", 8: "UNKNOWN_EFFECT", 9: "STOP_MOVED", 10: "NO_EFFECT",
+          11: "ACCESSIBILITY_ISSUE"}
+
+
+def decode_alerts(payload: bytes, route_filter: set[str] | None = None) -> list[dict]:
+    """Service alerts -> plain dicts (route ids, stop ids, effect, header text, active periods)."""
+    msg = gtfs_realtime_pb2.FeedMessage()
+    msg.ParseFromString(payload)
+    out = []
+    for ent in msg.entity:
+        if not ent.HasField("alert"):
+            continue
+        a = ent.alert
+        routes = sorted({ie.route_id for ie in a.informed_entity if ie.route_id})
+        if route_filter is not None and not (set(routes) & route_filter):
+            continue
+
+        def text(ts) -> str:
+            for t in ts.translation:
+                if t.language in ("", "en"):
+                    return t.text
+            return ts.translation[0].text if ts.translation else ""
+
+        out.append({"id": ent.id, "routes": routes,
+                    "stops": sorted({ie.stop_id for ie in a.informed_entity if ie.stop_id}),
+                    "effect": EFFECT.get(a.effect, str(a.effect)), "header": text(a.header_text),
+                    "description": text(a.description_text)[:1000],
+                    "active": [[p.start or None, p.end or None] for p in a.active_period]})
+    return out

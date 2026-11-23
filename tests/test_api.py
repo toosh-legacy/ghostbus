@@ -213,3 +213,14 @@ def test_api_keys_and_rate_limit_headers(client):
     assert client.get("/v1/routes", headers={"X-Api-Key": raw}).status_code == 429
     assert client.get("/v1/routes", headers={"X-Api-Key": "gb_wrong"}).status_code == 401
     assert "RateLimit-Remaining" in client.get("/v1/routes").headers
+
+
+@pytest.mark.slow
+def test_sse_fanout_load_smoke():
+    """Small version of `python -m gbevals.load_sse --clients 500` (separate client process)."""
+    import asyncio
+
+    from gbevals.load_sse import run
+
+    r = asyncio.run(run(clients=25, minutes=14, speed=40))
+    assert r["connected"] == 25 and r["all_received_everything"], r

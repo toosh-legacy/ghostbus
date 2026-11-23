@@ -364,10 +364,28 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
             vehicles.append({**v, "age_s": round(age), "stale": age > 120})
         return envelope(c, {"route_id": route_id, "shapes": shapes, "stops": stops, "vehicles": vehicles}, live=True)
 
+    @app.get("/v1/alerts")
+    def alerts(route: str | None = None, c: AppContext = Depends(ctx)):
+        """Active service alerts for the pilot routes, from the latest recorded Alerts snapshot."""
+        import gzip
+
+        from gbstream.decoder import decode_alerts
+        from gbstream.replay import snapshot_ts
+
+        base = get_settings().lake_dir / "raw" / "Alerts"
+        files = sorted(base.rglob("*.pb.gz")) if base.exists() else []
+        if not files:
+            return envelope(c, [], note="no Alerts snapshot recorded yet")
+        latest = files[-1]
+        now = c.now()
+        rows = decode_alerts(gzip.decompress(latest.read_bytes()), {route} if route else c.route_set)
+        rows = [r for r in rows if not r["active"] or any((s0 or 0) <= now <= (e0 or 1e12) for s0, e0 in r["active"])]
+        return envelope(c, rows, snapshot_utc=_iso(snapshot_ts(latest)))
+
     @app.get("/v1/stream")
     async def stream(request: Request, route: str | None = None, c: AppContext = Depends(ctx)):
         try:
-            q = c.pipeline.bc.subscribe()
+            q = c.pipeline.bc.subscribe(route)
         except RuntimeError:
             raise Problem(503, "Too many stream subscribers") from None
 
@@ -381,8 +399,6 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
                         msg = await asyncio.wait_for(q.get(), timeout=15)
                     except TimeoutError:
                         yield ": keepalive\n\n"
-                        continue
-                    if route and msg.get("route_id") not in (route, None):
                         continue
                     yield f"event: {msg['type']}\ndata: {json.dumps(msg, default=str)}\n\n"
             finally:

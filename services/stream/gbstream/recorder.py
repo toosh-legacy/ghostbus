@@ -48,6 +48,7 @@ class FeedState:
     last_ok_utc: str | None = None
     last_error: str | None = None
     last_entities: int | None = None
+    interval_s: float | None = None  # per-feed override (Alerts change rarely: 60 s)
 
 
 def snapshot_path(raw_dir: Path, feed: str, fetch_ts: datetime) -> Path:
@@ -87,6 +88,8 @@ class Recorder:
                 FeedState("VehiclePositions", rt.vehicle_positions),
                 FeedState("TripUpdates", rt.trip_updates),
             ]
+            if rt.alerts:
+                feeds.append(FeedState("Alerts", rt.alerts, interval_s=60.0))
         self.feeds = feeds
         self.manifest = raw_dir / "manifest.jsonl"
         self.heartbeat = var_dir / "recorder_heartbeat.json"
@@ -133,7 +136,7 @@ class Recorder:
                         log.warning("publish failed: %s", e)
             else:
                 raise RuntimeError(f"HTTP {r.status_code}")
-            fs.next_due = time.monotonic() + self.interval_s
+            fs.next_due = time.monotonic() + max(self.interval_s, fs.interval_s or 0)
         except Exception as e:  # noqa: BLE001 - recorder must survive everything
             fs.errors += 1
             fs.consecutive_errors += 1

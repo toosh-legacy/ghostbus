@@ -41,3 +41,6 @@
 - Operational DB sink for live outputs (vehicles, arrivals, ghost evaluations, prediction log with delayed labels).
 - Agency TripUpdates predictions as the third stop-page source.
 - Batched Model A inference + cached service-day trips (stop page back under 300 ms p95).
+- Alerts feed recorded (60 s) + `/v1/alerts` + stop-page alert list; recorder restarted 23:15 UTC to add it (gap logged).
+- PWA service worker (app shell only; live data never cached).
+- SSE fan-out fix (route filter at publish time) + 500-client load test: all 500 clients received all 154 vehicle updates; 20x replay kept pace (89.6 s vs 90 s).

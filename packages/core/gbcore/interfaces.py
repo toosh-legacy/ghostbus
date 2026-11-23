@@ -109,27 +109,31 @@ class Broadcaster:
     """Async fan-out to subscribers (SSE). Bounded per-subscriber queues; slow clients drop oldest."""
 
     def __init__(self, max_queue: int = 1000, max_subscribers: int = 2000) -> None:
-        self._subs: set[asyncio.Queue] = set()
+        self._subs: dict[asyncio.Queue, str | None] = {}  # queue -> route filter (None = everything)
         self.max_queue = max_queue
         self.max_subscribers = max_subscribers
         self.sent = 0
 
-    def subscribe(self) -> asyncio.Queue:
+    def subscribe(self, route: str | None = None) -> asyncio.Queue:
+        """Filtering happens at publish time so one busy route can never evict another route's updates."""
         if len(self._subs) >= self.max_subscribers:
             raise RuntimeError("too many subscribers")
         q: asyncio.Queue = asyncio.Queue(self.max_queue)
-        self._subs.add(q)
+        self._subs[q] = route
         return q
 
     def unsubscribe(self, q: asyncio.Queue) -> None:
-        self._subs.discard(q)
+        self._subs.pop(q, None)
 
     @property
     def n_subscribers(self) -> int:
         return len(self._subs)
 
     def publish(self, msg: dict) -> None:
-        for q in list(self._subs):
+        rid = msg.get("route_id")
+        for q, route in list(self._subs.items()):
+            if route is not None and rid is not None and rid != route:
+                continue
             if q.full():
                 try:
                     q.get_nowait()

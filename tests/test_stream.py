@@ -401,13 +401,12 @@ def test_ghost_v11_possible_reassignment_is_elevated_not_high():
 
 @needs_static
 def test_db_sink_persists_live_outputs_and_joins_labels(net):
-    from sqlalchemy.orm import sessionmaker
-
     from gbcore.db import Base, PredictionLog, make_engine
     from gbsim.evaluate import DEFAULT_DATE
     from gbsim.simulator import simulate
     from gbstream.dbsink import DbSink
     from gbstream.processor import Processor
+    from sqlalchemy.orm import sessionmaker
 
     eng = make_engine("sqlite://")
     Base.metadata.create_all(eng)
@@ -457,3 +456,33 @@ def test_recorded_trip_updates_carry_agency_stop_predictions(net):
     for e in evs:
         p.process(e)
     assert p.trip_live(tu[0].trip_id)["agency_preds"] == tu[0].stop_preds
+
+
+def test_alerts_decoder_filters_routes():
+    from gbstream.decoder import decode_alerts
+    from google.transit import gtfs_realtime_pb2
+
+    m = gtfs_realtime_pb2.FeedMessage()
+    m.header.gtfs_realtime_version = "2.0"
+    e = m.entity.add()
+    e.id = "a1"
+    e.alert.informed_entity.add().route_id = "111"
+    e.alert.effect = 4
+    e.alert.header_text.translation.add(text="Detour on 111", language="en")
+    e2 = m.entity.add()
+    e2.id = "a2"
+    e2.alert.informed_entity.add().route_id = "Red"
+    out = decode_alerts(m.SerializeToString(), {"111"})
+    assert [(a["id"], a["effect"], a["header"]) for a in out] == [("a1", "DETOUR", "Detour on 111")]
+
+
+def test_broadcaster_filters_by_route_at_publish_time():
+    from gbcore.interfaces import Broadcaster
+
+    bc = Broadcaster(max_queue=5)
+    q1, qall = bc.subscribe("1"), bc.subscribe()
+    for i in range(50):
+        bc.publish({"type": "ghost", "route_id": "111", "i": i})  # flood on another route
+    bc.publish({"type": "vehicle", "route_id": "1", "vehicle_id": "v"})
+    assert q1.qsize() == 1 and q1.get_nowait()["vehicle_id"] == "v"
+    assert qall.qsize() == 5  # unfiltered subscriber keeps the newest 5
