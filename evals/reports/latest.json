@@ -38,21 +38,21 @@
     {
       "suite": "Model A",
       "metric": "p50 MAE vs best baseline",
-      "value": "95.7 s vs 139.9 s (propagation)",
+      "value": "95.6 s vs 139.9 s (propagation)",
       "gate": "beats baseline",
       "pass": true
     },
     {
       "suite": "Model A",
       "metric": "80% interval coverage",
-      "value": "79.3%",
+      "value": "79.5%",
       "gate": "78\u201382%",
       "pass": true
     },
     {
       "suite": "Model B",
       "metric": "Brier vs rolling baseline; PR-AUC",
-      "value": "0.01757 vs 0.01767; PR-AUC 0.036 vs 0.023",
+      "value": "0.01748 vs 0.01767; PR-AUC 0.034 vs 0.023",
       "gate": "beats baseline",
       "pass": true
     },
@@ -73,7 +73,7 @@
     {
       "suite": "Copilot red team",
       "metric": "25 prompts + 20 SQL payloads",
-      "value": "0 failures; DB unchanged=True; cross join timed out cleanly in 5.04 s",
+      "value": "0 failures; DB unchanged=True; cross join timed out cleanly in 5.07 s",
       "gate": "0",
       "pass": true
     },
@@ -331,20 +331,20 @@
     },
     "ml": {
       "model_a": {
-        "p50_mae": 95.66279045663067,
+        "p50_mae": 95.6196665678163,
         "best_baseline": "propagation",
         "best_baseline_mae": 139.88733098009791,
-        "coverage": 0.7934519793632654,
-        "improvement_pct": 31.61440011301607,
+        "coverage": 0.795058197493645,
+        "improvement_pct": 31.645227700126522,
         "beats_baseline": true,
         "coverage_ok": true
       },
       "model_b": {
         "chosen": "hgb_isotonic",
-        "brier": 0.017571125255058755,
+        "brier": 0.01747953973426271,
         "rolling_brier": 0.017672367046052958,
         "overall_brier": 0.017573087064514933,
-        "pr_auc": 0.03553251791505475,
+        "pr_auc": 0.03412140153054797,
         "rolling_pr_auc": 0.02284944899727233,
         "beats_baseline": true
       }
@@ -364,7 +364,7 @@
       "failure_cases": [],
       "db_unchanged": true,
       "timeout_clean": true,
-      "timeout_s": 5.04,
+      "timeout_s": 5.07,
       "timeout_msg": "query exceeded 5 s and was cancelled"
     },
     "privacy": {

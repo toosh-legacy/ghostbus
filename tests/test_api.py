@@ -201,3 +201,15 @@ def test_unknown_route_days_never_counted_as_missed():
         assert set(lab.label) == {"unknown"} and not lab.missed.any()
         daily = pd.read_parquet(Path(d) / "missed_trip_daily.parquet")
         assert daily.unknown.all() and daily.missed_rate.isna().all()
+
+
+def test_api_keys_and_rate_limit_headers(client):
+    from gbapi.keys import create_key
+
+    raw = create_key("test-owner", quota_per_min=2)
+    r = client.get("/v1/routes", headers={"X-Api-Key": raw})
+    assert r.status_code == 200 and r.headers["RateLimit-Limit"] == "2"
+    client.get("/v1/routes", headers={"X-Api-Key": raw})
+    assert client.get("/v1/routes", headers={"X-Api-Key": raw}).status_code == 429
+    assert client.get("/v1/routes", headers={"X-Api-Key": "gb_wrong"}).status_code == 401
+    assert "RateLimit-Remaining" in client.get("/v1/routes").headers

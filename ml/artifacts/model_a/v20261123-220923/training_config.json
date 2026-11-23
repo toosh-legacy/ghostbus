@@ -1,0 +1,11 @@
+{
+  "seed": 42,
+  "months": "2025-07..2025-12",
+  "folds": 3,
+  "sample_pct_model_a": 12,
+  "data_hashes": {
+    "arrdep_2025": "eae5344638e61319185d5c1c996f8bec3e9a71879702b3fc34d9991f04ce7706"
+  },
+  "git_sha": "0c3ab45986286c7da51957e7327eb8da4b45ae49",
+  "saved_utc": "2026-11-23T22:09:24.335995+00:00"
+}

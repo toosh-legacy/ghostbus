@@ -139,6 +139,7 @@ def train_model_a(samples: pd.DataFrame | None = None, log=print) -> tuple[dict,
     summ["folds"] = fold_summ
     # hist medians of the last fold's training slice are used for serving
     tr_last, _, _ = split(df, folds[-1])
+    model.ref_delay_sample = tr_last["delay_k"].sample(min(20000, len(tr_last)), random_state=SEED).to_numpy()  # PSI reference
     model.hist_median = {"by_hour": tr_last.groupby(["route_id", "tp_j", "hour_j"])["y"].median().to_dict(),
                          "by_tp": tr_last.groupby(["route_id", "tp_j"])["y"].median().to_dict()}
     return summ, model, rows

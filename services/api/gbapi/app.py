@@ -117,6 +117,32 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
                               "reliability scores from MBTA open data.")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"])
 
+    from .keys import ANON_PER_MIN, KeyStore
+
+    keys = KeyStore()
+
+    @app.middleware("http")
+    async def rate_limit(request: Request, call_next):
+        if not request.url.path.startswith("/v1/") or request.url.path == "/v1/stream":
+            return await call_next(request)
+        raw = request.headers.get("x-api-key")
+        if raw:
+            hit = keys.lookup(raw)
+            if hit is None:
+                return problem_response(401, "Invalid API key", "The X-Api-Key header is not recognised.")
+            bucket, quota = hit
+        else:
+            bucket, quota = f"anon:{request.client.host if request.client else 'x'}", ANON_PER_MIN
+        ok, remaining = keys.check(bucket, quota)
+        if not ok:
+            r = problem_response(429, "Rate limit exceeded", f"Quota is {quota} requests per minute.")
+            r.headers["Retry-After"] = "1"
+        else:
+            r = await call_next(request)
+        r.headers["RateLimit-Limit"] = str(quota)
+        r.headers["RateLimit-Remaining"] = str(max(0, remaining))
+        return r
+
     @app.middleware("http")
     async def privacy_logging(request: Request, call_next):
         # Never log query strings (nearby-stop coordinates must not be logged).
@@ -460,7 +486,20 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
             live_cov = live_coverage(c.prediction_log, c.pipeline.proc.arrivals)
         except Exception as e:  # noqa: BLE001
             live_cov = {"error": str(e)}
-        return envelope(c, {"model_a": getattr(c.model_a, "version", None), "model_b": getattr(c.model_b, "version", None),
+        drift = None
+        try:
+            from gbml.online import PSI_WARN, psi
+
+            live = [f["features"].get("delay_k") for f in c.prediction_log if f["features"].get("delay_k") is not None]
+            ref = getattr(getattr(c.model_a, "m", None), "ref_delay_sample", None)
+            if live and ref is not None:
+                v = psi(np.asarray(ref), np.asarray(live))
+                drift = {"feature": "current delay", "psi": v, "warn": bool(v > PSI_WARN), "n_live": len(live)}
+            else:
+                drift = {"note": "not enough live model predictions yet", "n_live": len(live)}
+        except Exception as e:  # noqa: BLE001
+            drift = {"error": str(e)}
+        return envelope(c, {"drift": drift, "model_a": getattr(c.model_a, "version", None), "model_b": getattr(c.model_b, "version", None),
                             "backtest": json.loads(bt.read_text()) if bt.exists() else None,
                             "live": live_cov, "predictions_logged": len(c.prediction_log)})
 

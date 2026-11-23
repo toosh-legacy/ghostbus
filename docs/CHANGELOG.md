@@ -32,3 +32,7 @@
 - SQL validator (sqlglot: single SELECT, allowlisted views only, no table functions/file access/PRAGMA/ATTACH, comments stripped, LIMIT 500, 5 s timeout, read-only connection with external access disabled), offline intent-template provider, /v1/copilot/ask + /ask page.
 - Gold set (40 + 10 unanswerable, generated from data) and red team (25 prompts + 20 SQL payloads); `make eval` writes evals/reports/latest.md — 12/12 gates pass.
 - ghost-def v1.1 (wrong-trip reassignment rule) and confirmed terminal departure detection.
+
+## Wrap-up
+- Public API keys (hashed) + per-key/anonymous token-bucket quotas with RateLimit headers; drift PSI in /admin/v1/models; models retrained and re-pinned via the promotion rule (Model A 95.6 s MAE, 79.5% coverage; Model B Brier 0.01748).
+- docs: methodology.md, threat-model.md, ADR stubs, BLOCKERS, README, MORNING_REPORT. Phase 7 (Azure) skipped at the developer's request.
