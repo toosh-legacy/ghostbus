@@ -25,6 +25,6 @@ test("nearby -> stop page -> route map -> reliability -> copilot (mobile)", asyn
   await expect(page.getByText(/Highest missed-trip rate/)).toBeVisible();
   await axe(page);
   await page.goto("/methodology");
-  await expect(page.getByText("ghost-def v1.0").first()).toBeVisible();
+  await expect(page.getByText(/ghost-def v1\.\d/).first()).toBeVisible();
   await axe(page);
 });

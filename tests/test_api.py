@@ -114,7 +114,7 @@ def test_reliability_and_csv(client):
 
 def test_methodology(client):
     d = client.get("/v1/methodology").json()["data"]
-    assert d["ghost_def_version"] == "ghost-def v1.0"
+    assert d["ghost_def_version"] == "ghost-def v1.1"
     assert "bunching_rate" in d["metric_definitions"]
     assert d["data_sources"]
 

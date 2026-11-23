@@ -150,7 +150,7 @@ OK = FeedHealth(True, "ok", 9_990, 500)
 
 def test_ghost_high():
     g = evaluate_trip(10_000 + 301, TRIP, OK, None, None)
-    assert g.state == "high" and g.def_version == "ghost-def v1.0"
+    assert g.state == "high" and g.def_version == "ghost-def v1.1"
 
 
 def test_ghost_elevated_not_tracking():
@@ -246,7 +246,7 @@ def net():
 
 
 @needs_static
-@pytest.mark.parametrize("scenario", ["normal", "feed_outage", "many_ghosts"])
+@pytest.mark.parametrize("scenario", ["normal", "feed_outage", "many_ghosts", "wrong_trip"])
 def test_simulator_scenario_gates(net, scenario):
     from gbsim.evaluate import gates, run_scenario
 
@@ -388,3 +388,12 @@ def test_redis_streams_bus_roundtrip():
 
     evs, got = asyncio.run(go())
     assert [asdict(e) for e in got] == [asdict(e) for e in evs]
+
+
+def test_ghost_v11_possible_reassignment_is_elevated_not_high():
+    g = evaluate_trip(10_000 + 900, TRIP, OK, None, None,
+                      possible_reassignment="vehicle v reports trip t9 while running 25 min ahead of it")
+    assert g.state == "elevated" and "wrong trip assignment" not in g.reason or "t9" in g.reason
+    assert g.def_version == "ghost-def v1.1"
+    # without the signal, the same trip is high
+    assert evaluate_trip(10_000 + 900, TRIP, OK, None, None).state == "high"

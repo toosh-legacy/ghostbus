@@ -23,7 +23,15 @@ from gbcore.timeutil import service_date_for, service_day_reference
 from gbschemas.events import Event, FeedFetchEvent, TripUpdateEvent, VehicleEvent
 
 from .arrivals import ArrivalDetector, ArrivalEvent, TripProgress
-from .ghost import FeedHealth, GhostEval, ScheduledTrip, evaluate_trip, feed_health
+from .ghost import (
+    REASSIGN_EARLY_S,
+    REASSIGN_WINDOW_S,
+    FeedHealth,
+    GhostEval,
+    ScheduledTrip,
+    evaluate_trip,
+    feed_health,
+)
 from .mapmatch import MapMatcher, VehicleMatchState
 from .network import Network
 
@@ -108,6 +116,8 @@ class Processor:
         self._prog: dict[tuple[str, str], TripProgress] = {}
         self._trip_last_seen: dict[str, float] = {}
         self._trip_vehicle: dict[str, str] = {}
+        self._trip_departed: dict[tuple[str, str], float] = {}  # (vehicle, trip) -> departure ts
+        self._all_by_trip: dict[str, ScheduledTrip] | None = None
         self._trip_last_arrival: dict[str, tuple[int, float, str]] = {}  # trip -> (stop_index, ts, stop_id)
         self._tu_last: dict[str, float] = {}
         self._last_vp_fetch: float | None = None
@@ -250,11 +260,34 @@ class Processor:
         arrs = self.detector.update(prog, p.stop_dists, p.stop_ids, p.stop_seqs, e.vehicle_ts, r.dist_m,
                                     route_id=p.route_id, vehicle_id=e.vehicle_id, source=e.source)
         for a in arrs:
+            if a.kind == "departure":
+                self._trip_departed[(e.vehicle_id, tid)] = a.arrival_ts
             self._trip_last_arrival[tid] = (a.stop_index, a.arrival_ts, a.stop_id)
             self.stats.arrivals += 1
             self.arrivals.append(a)
             if self.bc:
                 self.bc.publish({"type": "arrival", **asdict(a)})
+
+    def _possible_reassignments(self, active: list[tuple[str, ScheduledTrip]], ts: float) -> dict[str, str]:
+        """ghost-def v1.1: vehicles running their claimed trip > 10 min early likely serve an earlier unmatched trip."""
+        by_trip = {t.trip_id: t for _, t in active}
+        if self._all_by_trip is None or len(self._all_by_trip) != len(self._schedule):
+            self._all_by_trip = {t.trip_id: t for t in self._schedule.values()}
+        out: dict[str, str] = {}
+        for (vid, claimed), dep_ts in self._trip_departed.items():
+            ct = self._all_by_trip.get(claimed)
+            if ct is None or ct.first_dep_ts - dep_ts <= REASSIGN_EARLY_S:
+                continue
+            cands = [t for t in self._all_by_trip.values() if t.route_id == ct.route_id
+                     and t.direction_id == ct.direction_id and t.trip_id != claimed
+                     and t.trip_id not in self._trip_last_seen and abs(t.first_dep_ts - dep_ts) <= REASSIGN_WINDOW_S]
+            if cands:
+                best = min(cands, key=lambda t: (abs(t.first_dep_ts - dep_ts), t.trip_id))
+                if best.trip_id not in by_trip:
+                    continue
+                out.setdefault(best.trip_id, f"vehicle {vid} reports trip {claimed} while running "
+                                             f"{(ct.first_dep_ts - dep_ts) / 60:.0f} min ahead of it (likely wrong trip assignment)")
+        return out
 
     def _ensure_schedule(self, ts: float) -> None:
         if not self._auto_schedule:
@@ -279,11 +312,11 @@ class Processor:
                            h.last_rate)
         self.state.set_meta("feed_health", {"healthy": h.healthy, "reason": h.reason,
                                             "last_fetch_ts": h.last_fetch_ts, "clock": ts})
-        for key, t in self._schedule.items():
-            if not (t.first_dep_ts - 1800 <= ts <= t.last_arr_ts + 600):
-                continue
+        active = [(k, t) for k, t in self._schedule.items() if t.first_dep_ts - 1800 <= ts <= t.last_arr_ts + 600]
+        reassign = self._possible_reassignments(active, ts)
+        for key, t in active:
             g = evaluate_trip(ts, t, h, self._trip_last_seen.get(t.trip_id), self._tu_last.get(t.trip_id),
-                              self.priors.get(t.trip_id))
+                              self.priors.get(t.trip_id), reassign.get(t.trip_id))
             self.stats.ghost_evals += 1
             self.ghost_evals.append(g)
             prev = self._last_ghost_state.get(key)

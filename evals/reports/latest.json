@@ -1,0 +1,375 @@
+{
+  "gates": [
+    {
+      "suite": "Map matching",
+      "metric": "worst-scenario median error",
+      "value": "7.0 m",
+      "gate": "\u2264 25 m",
+      "pass": true
+    },
+    {
+      "suite": "Arrival detection",
+      "metric": "worst-scenario median / p90",
+      "value": "4.7 s / 22.6 s",
+      "gate": "\u2264 20 s / \u2264 60 s",
+      "pass": true
+    },
+    {
+      "suite": "Ghost rules",
+      "metric": "min precision / recall of High",
+      "value": "1.000 / 1.000",
+      "gate": "\u2265 0.9 / \u2265 0.9",
+      "pass": true
+    },
+    {
+      "suite": "Ghost rules",
+      "metric": "Unknown during outage",
+      "value": "100%",
+      "gate": "100%",
+      "pass": true
+    },
+    {
+      "suite": "Replay determinism",
+      "metric": "outputs 1\u00d7 vs 20\u00d7 (sim hour, recorded hour)",
+      "value": "identical",
+      "gate": "identical, 0 dropped",
+      "pass": true
+    },
+    {
+      "suite": "Model A",
+      "metric": "p50 MAE vs best baseline",
+      "value": "95.7 s vs 139.9 s (propagation)",
+      "gate": "beats baseline",
+      "pass": true
+    },
+    {
+      "suite": "Model A",
+      "metric": "80% interval coverage",
+      "value": "79.3%",
+      "gate": "78\u201382%",
+      "pass": true
+    },
+    {
+      "suite": "Model B",
+      "metric": "Brier vs rolling baseline; PR-AUC",
+      "value": "0.01757 vs 0.01767; PR-AUC 0.036 vs 0.023",
+      "gate": "beats baseline",
+      "pass": true
+    },
+    {
+      "suite": "Copilot accuracy",
+      "metric": "40 gold questions",
+      "value": "100.0%",
+      "gate": "\u2265 90%",
+      "pass": true
+    },
+    {
+      "suite": "Copilot refusals",
+      "metric": "10 unanswerable",
+      "value": "100%",
+      "gate": "100%",
+      "pass": true
+    },
+    {
+      "suite": "Copilot red team",
+      "metric": "25 prompts + 20 SQL payloads",
+      "value": "0 failures; DB unchanged=True; cross join timed out cleanly in 5.04 s",
+      "gate": "0",
+      "pass": true
+    },
+    {
+      "suite": "Privacy",
+      "metric": "coordinates in logs",
+      "value": "0",
+      "gate": "0",
+      "pass": true
+    }
+  ],
+  "results": {
+    "simulator": {
+      "scenarios": [
+        {
+          "scenario": "normal",
+          "trips": 184,
+          "ghosts_true": 6,
+          "mapmatch": {
+            "n": 24698,
+            "median_m": 6.030225529208792,
+            "p90_m": 20.258875064167,
+            "match_rate": 0.9983426977646631
+          },
+          "arrivals": {
+            "n_detected": 4289,
+            "n_matched_truth": 4289,
+            "recall": 0.9281540792036356,
+            "median_s": 3.963655710220337,
+            "p90_s": 14.304254198074348,
+            "median_s_high_conf": 3.963655710220337
+          },
+          "ghost": {
+            "trips_scored": 184,
+            "unknown_final": 0,
+            "tp": 6,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "gates": {
+            "mapmatch_median_le_25m": true,
+            "arrival_median_le_20s": true,
+            "arrival_p90_le_60s": true,
+            "ghost_precision_ge_0.9": true,
+            "ghost_recall_ge_0.9": true
+          }
+        },
+        {
+          "scenario": "heavy_delays",
+          "trips": 184,
+          "ghosts_true": 3,
+          "mapmatch": {
+            "n": 28282,
+            "median_m": 6.2782154861747586,
+            "p90_m": 21.264673218813755,
+            "match_rate": 0.9989050965987356
+          },
+          "arrivals": {
+            "n_detected": 4033,
+            "n_matched_truth": 4033,
+            "recall": 0.8573554421768708,
+            "median_s": 3.7768075466156006,
+            "p90_s": 14.771001577377325,
+            "median_s_high_conf": 3.7768075466156006
+          },
+          "ghost": {
+            "trips_scored": 184,
+            "unknown_final": 0,
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "gates": {
+            "mapmatch_median_le_25m": true,
+            "arrival_median_le_20s": true,
+            "arrival_p90_le_60s": true,
+            "ghost_precision_ge_0.9": true,
+            "ghost_recall_ge_0.9": true
+          }
+        },
+        {
+          "scenario": "bunching",
+          "trips": 184,
+          "ghosts_true": 9,
+          "mapmatch": {
+            "n": 22231,
+            "median_m": 6.219352624963449,
+            "p90_m": 21.55965930212915,
+            "match_rate": 0.9983832577356626
+          },
+          "arrivals": {
+            "n_detected": 4105,
+            "n_matched_truth": 4105,
+            "recall": 0.910603371783496,
+            "median_s": 4.068360805511475,
+            "p90_s": 16.37148246765137,
+            "median_s_high_conf": 4.068360805511475
+          },
+          "ghost": {
+            "trips_scored": 184,
+            "unknown_final": 0,
+            "tp": 9,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "gates": {
+            "mapmatch_median_le_25m": true,
+            "arrival_median_le_20s": true,
+            "arrival_p90_le_60s": true,
+            "ghost_precision_ge_0.9": true,
+            "ghost_recall_ge_0.9": true
+          }
+        },
+        {
+          "scenario": "feed_outage",
+          "trips": 184,
+          "ghosts_true": 5,
+          "mapmatch": {
+            "n": 21809,
+            "median_m": 6.173357186209614,
+            "p90_m": 21.46197760812511,
+            "match_rate": 0.998306326100888
+          },
+          "arrivals": {
+            "n_detected": 4294,
+            "n_matched_truth": 4294,
+            "recall": 0.9228454760369654,
+            "median_s": 4.699575901031494,
+            "p90_s": 22.646943116188062,
+            "median_s_high_conf": 4.099967837333679
+          },
+          "ghost": {
+            "trips_scored": 176,
+            "unknown_final": 8,
+            "tp": 5,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "outage_unknown_share": 1.0,
+            "outage_evals": 2647
+          },
+          "gates": {
+            "mapmatch_median_le_25m": true,
+            "arrival_median_le_20s": true,
+            "arrival_p90_le_60s": true,
+            "ghost_precision_ge_0.9": true,
+            "ghost_recall_ge_0.9": true,
+            "outage_100pct_unknown": true
+          }
+        },
+        {
+          "scenario": "many_ghosts",
+          "trips": 184,
+          "ghosts_true": 45,
+          "mapmatch": {
+            "n": 18390,
+            "median_m": 6.198542566934975,
+            "p90_m": 21.111796793820492,
+            "match_rate": 0.9988051270910276
+          },
+          "arrivals": {
+            "n_detected": 3365,
+            "n_matched_truth": 3365,
+            "recall": 0.9321329639889196,
+            "median_s": 4.0806779861450195,
+            "p90_s": 15.195405244827269,
+            "median_s_high_conf": 4.0806779861450195
+          },
+          "ghost": {
+            "trips_scored": 184,
+            "unknown_final": 0,
+            "tp": 45,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "gates": {
+            "mapmatch_median_le_25m": true,
+            "arrival_median_le_20s": true,
+            "arrival_p90_le_60s": true,
+            "ghost_precision_ge_0.9": true,
+            "ghost_recall_ge_0.9": true
+          }
+        },
+        {
+          "scenario": "wrong_trip",
+          "trips": 184,
+          "ghosts_true": 7,
+          "mapmatch": {
+            "n": 23354,
+            "median_m": 6.9546304539215384,
+            "p90_m": 23.17152802915489,
+            "match_rate": 0.9986853822993088
+          },
+          "arrivals": {
+            "n_detected": 4194,
+            "n_matched_truth": 4194,
+            "recall": 0.9149214659685864,
+            "median_s": 4.299101710319519,
+            "p90_s": 15.468107700347913,
+            "median_s_high_conf": 4.299101710319519
+          },
+          "ghost": {
+            "trips_scored": 184,
+            "unknown_final": 0,
+            "tp": 7,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "gates": {
+            "mapmatch_median_le_25m": true,
+            "arrival_median_le_20s": true,
+            "arrival_p90_le_60s": true,
+            "ghost_precision_ge_0.9": true,
+            "ghost_recall_ge_0.9": true
+          }
+        }
+      ],
+      "config": {
+        "hours": 2.0,
+        "routes": "all 10 pilot routes"
+      }
+    },
+    "determinism": {
+      "identical": true,
+      "dropped": {
+        "1.0": 0,
+        "20.0": 0
+      },
+      "virtual_sleep_s": {
+        "1.0": 3600.0,
+        "20.0": 180.0
+      },
+      "events": 4092,
+      "recorded_hour": {
+        "identical": true,
+        "dropped": [
+          0,
+          0
+        ],
+        "arrivals": 3063,
+        "window_s": 3600,
+        "snapshots": 306
+      }
+    },
+    "ml": {
+      "model_a": {
+        "p50_mae": 95.66279045663067,
+        "best_baseline": "propagation",
+        "best_baseline_mae": 139.88733098009791,
+        "coverage": 0.7934519793632654,
+        "improvement_pct": 31.61440011301607,
+        "beats_baseline": true,
+        "coverage_ok": true
+      },
+      "model_b": {
+        "chosen": "hgb_isotonic",
+        "brier": 0.017571125255058755,
+        "rolling_brier": 0.017672367046052958,
+        "overall_brier": 0.017573087064514933,
+        "pr_auc": 0.03553251791505475,
+        "rolling_pr_auc": 0.02284944899727233,
+        "beats_baseline": true
+      }
+    },
+    "copilot": {
+      "accuracy": 1.0,
+      "n": 40,
+      "failures": [],
+      "refusal_rate": 1.0,
+      "n_unanswerable": 10,
+      "refusal_failures": []
+    },
+    "redteam": {
+      "n_prompts": 25,
+      "n_sql_payloads": 20,
+      "failures": 0,
+      "failure_cases": [],
+      "db_unchanged": true,
+      "timeout_clean": true,
+      "timeout_s": 5.04,
+      "timeout_msg": "query exceeded 5 s and was cancelled"
+    },
+    "privacy": {
+      "log_lines_captured": 10,
+      "coordinate_leaks": 0
+    }
+  }
+}

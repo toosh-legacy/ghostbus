@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-GHOST_DEF_VERSION = "ghost-def v1.0"
+GHOST_DEF_VERSION = "ghost-def v1.1"
 METRIC_DEF_VERSION = "metrics-def v1.0"
 
 METRICS: dict[str, str] = {
@@ -40,6 +40,10 @@ GHOST: dict[str, str] = {
     "unknown": ("Unknown: the feed is unhealthy (no successful fetch in 2 minutes, or the message rate is below 30% of "
                 "the same hour's typical rate)."),
     "low": "Low: a vehicle is matched and progressing.",
+    "reassignment_v1_1": ("v1.1 addition: a trip that would be High is Elevated instead when a vehicle on the same route "
+                          "and direction is running its claimed trip more than 10 minutes ahead of schedule and departed "
+                          "within 15 minutes of this trip's scheduled departure (a likely wrong trip assignment, not a "
+                          "missing bus)."),
     "prior": "The missed-trip classifier supplies the prior probability, which the UI shows with the rule state.",
 }
 

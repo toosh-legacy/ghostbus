@@ -27,3 +27,8 @@
 - Next.js 16 app: /, /stops/[id], /routes/[id] (Leaflet + SSE + list alternative), /reliability (+ route detail, CSV), /methodology, /ask, /admin; PWA manifest; typed client generated from OpenAPI.
 - Playwright + axe happy path (mobile viewport) passes on 5 pages; `make demo` serves API :8000 + web :3100 with a replay of recorded data.
 - Ghost rules get a 3-minute warm-up (unknown) after each pipeline start so restarts never produce false ghosts.
+
+## Phase 6 — copilot + evaluation
+- SQL validator (sqlglot: single SELECT, allowlisted views only, no table functions/file access/PRAGMA/ATTACH, comments stripped, LIMIT 500, 5 s timeout, read-only connection with external access disabled), offline intent-template provider, /v1/copilot/ask + /ask page.
+- Gold set (40 + 10 unanswerable, generated from data) and red team (25 prompts + 20 SQL payloads); `make eval` writes evals/reports/latest.md — 12/12 gates pass.
+- ghost-def v1.1 (wrong-trip reassignment rule) and confirmed terminal departure detection.

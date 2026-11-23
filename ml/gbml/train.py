@@ -253,7 +253,7 @@ def card_b(summ: dict, version: str) -> str:
     m = summ["mean"]
     return f"""# Model card — Model B (missed-trip probability) {version}
 
-- Task: probability that a scheduled pilot-route trip is missed (ghost-def v1.0 historical definition), using only
+- Task: probability that a scheduled pilot-route trip is missed (ghost-def v1.1 historical definition), using only
   information available by 4:00 AM on the service date.
 - Labels: D2 half-trips with no observed timepoint events; route-days below 70% completeness excluded (unknown).
 - Candidates: logistic regression (one-hot, class weights) and HistGradientBoostingClassifier (class weights), each

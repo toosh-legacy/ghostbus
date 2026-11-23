@@ -2,7 +2,7 @@
 
 Outputs in lake/curated/metrics/ (Parquet):
 - route_metrics.parquet        route x month x day_type x time_band (+ 'all' rollups)
-- trip_labels.parquet          one row per D2 half-trip: missed / unknown labels (ghost-def v1.0)
+- trip_labels.parquet          one row per D2 half-trip: missed / unknown labels (ghost-def v1.1)
 - missed_trip_daily.parquet    route x service_date
 - timepoint_delay_summary.parquet   route x direction x timepoint x month x time_band delay quantiles
 - delay_quantiles.parquet      route x direction x stop x time_band (fallback prediction ranges)
@@ -15,7 +15,7 @@ from pathlib import Path
 import duckdb
 from gbcore.settings import get_settings
 
-DEF_VERSION = "ghost-def v1.0"
+DEF_VERSION = "ghost-def v1.1"
 METRIC_DEF_VERSION = "metrics-def v1.0"
 
 # Thresholds (config values; published on the methodology page)
@@ -55,7 +55,7 @@ def build(con: duckdb.DuckDBPyConnection | None = None, out: Path | None = None)
                {BAND_SQL.replace('h ', '((sched_s // 3600) % 24) ').replace('h>', '((sched_s // 3600) % 24)>')} AS time_band
         FROM arr
     """)
-    # ---- trip labels (historical missed trip, ghost-def v1.0)
+    # ---- trip labels (historical missed trip, ghost-def v1.1)
     con.execute(f"""
         CREATE OR REPLACE TEMP TABLE trips AS
         SELECT e.service_date, e.route_id, e.direction_id, e.half_trip_id, min(e.sched_s) AS first_sched_s,

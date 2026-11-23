@@ -42,3 +42,8 @@ One line each: decision — reason — alternative considered.
 - Web served on port 3100 (3000 is used by another local app); Playwright uses the system Edge channel — no browser download needed — bundled Chromium download.
 - Ghost evaluation is 'unknown' for the first 3 minutes of feed after a pipeline (re)start — the 60 s reorder buffer otherwise makes every in-progress trip look unmatched — no warm-up (false High after restarts).
 - Node is available so the Next.js app is the primary UI; the FastAPI /demo page (lite fallback) is not built — spec makes /demo the no-Node fallback only — build both.
+- ghost-def bumped to v1.1: a would-be High trip is Elevated when a vehicle on the same route/direction runs its claimed trip > 10 min early and departed within 15 min of this trip's schedule (likely wrong trip assignment) — the wrong_trip scenario produced false Highs under v1.0 (precision 0.78) — keep v1.0 and accept the misses.
+- Terminal departure needs two consecutive pings beyond stop + 15 m — layover GPS noise fired false early departures — single-ping trigger.
+- Recorded-hour determinism check uses a closed window ending 30 s before the newest snapshot — the live recorder appends during the eval — open window.
+- CI has no lake data (raw data is never committed), so data-dependent tests/evals skip in CI; the fast eval subset runs fully locally — commit sample data.
+- Phase 7 (Azure/Phase C prep: infra README, Bicep stubs, Azure adapter stubs) skipped at the developer's request mid-run — they will do the cloud work themselves.
