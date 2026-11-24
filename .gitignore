@@ -17,3 +17,7 @@ ml/artifacts/**/*.joblib
 *.log
 apps/web/test-results/
 apps/web/playwright-report/
+
+# stray MLflow default stores (the real one lives in var/mlflow)
+mlflow.db
+mlruns/

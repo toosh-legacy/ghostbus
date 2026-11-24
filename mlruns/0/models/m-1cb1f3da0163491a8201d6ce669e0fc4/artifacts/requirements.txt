@@ -1,6 +1,0 @@
-mlflow==3.18.0
-lightgbm
-mapie
-scikit-learn
-pandas
-numpy
