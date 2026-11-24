@@ -48,3 +48,4 @@
 
 ## Copilot OpenAI provider run
 - Tighter LLM SQL prompt (filters, trends, subway refusals, few-shot examples); gpt-4o-mini scores 95% gold, 100% refusals, 0 red-team failures (evals/reports/provider_comparison.md).
+- Copilot diagnostics: SL alias rule, deterministic day_type/time_band default filters, forecast refusal before LLM call, OpenAI seed; gpt-4o-mini 97.5-100% gold, 100% refusals, 0 red-team failures.

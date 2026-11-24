@@ -135,3 +135,24 @@ def test_openai_provider_without_key_falls_back_to_offline(monkeypatch):
     monkeypatch.setattr(get_settings(), "openai_api_key", "")
     a = answer("Which 3 pilot routes had the highest missed-trip rate last month?", provider="openai")
     assert a["provider"] == "offline" and not a["refused"]
+
+
+def test_default_band_filters_added_only_when_missing():
+    from gbcopilot.agent import default_band_filters
+
+    s = default_band_filters("SELECT route_id, month, missed_trip_rate FROM v_route_timeband_metrics WHERE route_id = '743'")
+    assert "day_type = 'all'" in s and "time_band = 'all'" in s
+    s = default_band_filters("SELECT route_id FROM v_route_timeband_metrics WHERE day_type = 'weekend'")
+    assert "day_type = 'weekend'" in s and "day_type = 'all'" not in s and "time_band = 'all'" in s
+    s = default_band_filters("SELECT route_id FROM v_route_month_metrics")
+    assert "all" not in s
+
+
+def test_future_questions_refused_before_llm_call():
+    from gbcopilot import agent
+
+    def boom(*_a, **_k):
+        raise AssertionError("LLM must not be called for forecast questions")
+
+    a = agent._answer_llm("Predict the missed-trip rate for route 1 next month.", boom, "openai")
+    assert a["refused"] and "forecast" in a["answer"]

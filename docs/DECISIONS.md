@@ -62,3 +62,13 @@ First real run with `gpt-4o-mini`: 82.5% gold / 90% refusals / 0 red-team failur
 `v_missed_trip_daily`, and mapping "Red Line" to SL1. Prompt now spells out those rules, marks subway/rail as
 unanswerable, and adds two worked examples. Result: 95.0% gold / 100% refusals / 0 red-team failures; DB unchanged.
 Cost of a full comparison run is about $0.01. The offline provider stays the default and the eval-gate provider.
+
+## Copilot diagnostics follow-up (2026-11-23)
+Repeated runs showed three failure causes: (1) "SL3" alone triggered refusals (prompt over-warned about Silver
+Line ambiguity) — prompt now states SL1 = '741', SL3 = '743' are in the data; (2) missing day_type/time_band
+filters on trend queries — fixed deterministically by `agent.default_band_filters` (sqlglot adds `= 'all'` for
+whichever filter the query never mentions; the validator still checks the result); (3) gpt-4o-mini treats 2025
+months as "future" and refuses them, while sometimes answering real forecast questions with past data — prompt
+now says every listed month is past, and forecast questions are refused by a regex before any LLM call. Requests
+carry `seed: 7` for best-effort repeatability. Result over 4 runs: 97.5–100% gold, 100% refusals, 0 red-team
+failures. Known flaky item: "bunching rate of route 39 in the evening in December 2025" is sometimes refused.

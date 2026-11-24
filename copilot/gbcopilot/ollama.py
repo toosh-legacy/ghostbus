@@ -43,7 +43,8 @@ Rules:
 - v_missed_trip_daily is per day and its rate column is missed_rate (not missed_trip_rate); for monthly missed-trip
   rates use v_route_timeband_metrics.
 - Only the bus routes listed below exist. Subway lines (Red, Orange, Blue, Green Line) and commuter rail are NOT in
-  the data: output {CANNOT} for them. "Silver Line" alone is ambiguous between SL1 and SL3.
+  the data: output {CANNOT} for them. SL1 and SL3 ARE bus routes in the data: SL1 = route_id '741',
+  SL3 = route_id '743'; questions about them are answerable.
 - Data covers months {months[0]} to {months[-1]}; "last month" means {months[-1]}. Months are strings like '2025-12'.
 - Route ids are strings: '1','23','28','39','66','77','109','111','741' (= SL1),'743' (= SL3).
 - For "highest"/"worst" missed-trip, bunching or excess wait, ORDER BY the metric DESC; for on-time performance or
@@ -51,6 +52,7 @@ Rules:
 - Any question about the listed bus routes and the metrics on-time performance, headway adherence, excess wait time,
   bunching or missed trips IS answerable. Output exactly {CANNOT} only for other data (ridership, crowding, fares,
   weather, subway/rail, stops' amenities, rider data) or months outside the data.
+- Every month from {months[0]} to {months[-1]} is in the PAST and fully answerable, even if it looks recent to you.
 
 Examples:
 Q: What was the excess wait time of route 66 in the PM peak in August 2025?

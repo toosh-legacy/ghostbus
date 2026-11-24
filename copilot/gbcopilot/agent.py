@@ -9,6 +9,7 @@ data; there is no tool that writes, fetches URLs or reads files.
 from __future__ import annotations
 
 import os
+import re
 from functools import lru_cache
 
 from gbcore.definitions import get_definition
@@ -105,8 +106,38 @@ def answer(question: str, provider: str | None = None) -> dict:
             "caveat": caveat, "suggestions": [], "provider": provider, "intent": it.kind}
 
 
+def default_band_filters(sql: str) -> str:
+    """LLMs often forget the day_type/time_band filters on v_route_timeband_metrics and return one row per band.
+    Add `= 'all'` for whichever of the two the query never mentions. The validator still checks the result."""
+    import sqlglot
+    from sqlglot import exp
+
+    try:
+        tree = sqlglot.parse_one(sql, read="duckdb")
+    except sqlglot.errors.ParseError:
+        return sql
+    for sel in tree.find_all(exp.Select):
+        tables = [t.name.lower() for t in sel.find_all(exp.Table)]
+        if "v_route_timeband_metrics" not in tables or sel.find(exp.Subquery):
+            continue
+        where = sel.args.get("where")
+        used = {c.name.lower() for c in where.find_all(exp.Column)} if where else set()
+        for col in ("day_type", "time_band"):
+            if col not in used:
+                sel.where(exp.EQ(this=exp.column(col), expression=exp.Literal.string("all")), copy=False)
+    return tree.sql(dialect="duckdb")
+
+
+FUTURE_RE = re.compile(r"\b(next (month|week|year|quarter)|predict\w*|forecast\w*|will be|going to|tomorrow|"
+                       r"upcoming|future)\b", re.I)
+
+
 def _answer_llm(question: str, generate_sql, provider: str) -> dict:
     """An LLM writes the SQL; the validator, read-only connection, limit and timeout still apply."""
+    if FUTURE_RE.search(question):  # deterministic: models misjudge which months are "future"
+        out = refuse("the data is historical; it does not contain forecasts")
+        out["provider"] = provider
+        return out
     _, months = _vocab()
     try:
         sql = generate_sql(question, list(months))
@@ -118,6 +149,7 @@ def _answer_llm(question: str, generate_sql, provider: str) -> dict:
         out = refuse("the question is outside the allowlisted reliability views")
         out["provider"] = provider
         return out
+    sql = default_band_filters(sql)
     try:
         res = run_query(sql)
     except (ValidationError, TimeoutError) as e:

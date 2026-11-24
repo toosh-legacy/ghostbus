@@ -27,7 +27,7 @@ def generate_sql(question: str, months: list[str], timeout: float = 30.0) -> str
         f"{s.openai_base_url.rstrip('/')}/chat/completions",
         headers={"Authorization": f"Bearer {s.openai_api_key}"},
         timeout=timeout,
-        json={"model": s.openai_model, "temperature": 0,
+        json={"model": s.openai_model, "temperature": 0, "seed": 7,  # seed: best-effort repeatability
               "messages": [{"role": "system", "content": SYSTEM},
                            {"role": "user", "content": build_prompt(question, months)}]},
     )
