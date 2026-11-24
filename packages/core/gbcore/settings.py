@@ -25,7 +25,10 @@ class Settings(BaseSettings):
         "GhostBus/0.1 (open-source transit reliability research project; polite polling 20s)"
     )
     admin_token: str = "dev-admin-token"
-    copilot_provider: str = "offline"  # offline | ollama | azure_openai
+    copilot_provider: str = "offline"  # offline | openai | ollama | azure_openai
+    openai_api_key: str = ""  # only for COPILOT_PROVIDER=openai; keep it in the git-ignored .env
+    openai_model: str = "gpt-4o-mini"
+    openai_base_url: str = "https://api.openai.com/v1"
     stream_bus: str = "memory"  # memory | redis | eventhubs
     live_state: str = "memory"  # memory | redis
     lake_store: str = "local"  # local | azurite | adls

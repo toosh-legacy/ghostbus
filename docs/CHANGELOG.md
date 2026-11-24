@@ -44,3 +44,4 @@
 - Alerts feed recorded (60 s) + `/v1/alerts` + stop-page alert list; recorder restarted 23:15 UTC to add it (gap logged).
 - PWA service worker (app shell only; live data never cached).
 - SSE fan-out fix (route filter at publish time) + 500-client load test: all 500 clients received all 154 vehicle updates; 20x replay kept pace (89.6 s vs 90 s).
+- Copilot LLM providers: OpenAI (optional, key from .env) and Ollama (optional), sharing one prompt + SQL extractor; model-written SQL is still validated; provider comparison script `python -m gbevals.compare_providers`.

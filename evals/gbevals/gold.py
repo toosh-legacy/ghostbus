@@ -128,6 +128,10 @@ def score_item(item: dict, ans: dict) -> bool:
     ri = cols.index("route_id") if "route_id" in cols else None
     mi = cols.index("month") if "month" in cols else None
     exp = item["expected"]
+    if ri is None and item["kind"] != "trend":
+        return False
+    if item["kind"] == "trend" and mi is None:
+        return False
     if item["kind"] == "ranking":
         return [r[ri] for r in rows] == exp["routes"] and all(_close(r[ci], v) for r, v in zip(rows, exp["values"]))
     if item["kind"] == "trend":

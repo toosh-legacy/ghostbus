@@ -41,8 +41,17 @@ def refuse(reason: str) -> dict:
 
 
 def answer(question: str, provider: str | None = None) -> dict:
-    provider = provider or os.environ.get("COPILOT_PROVIDER", "offline")
-    if provider != "offline":  # ollama / azure_openai are optional; the offline provider is the default
+    from gbcore.settings import get_settings
+
+    provider = provider or os.environ.get("COPILOT_PROVIDER") or get_settings().copilot_provider
+    if provider in ("openai", "ollama"):
+        from . import ollama, openai_provider
+
+        mod = openai_provider if provider == "openai" else ollama
+        if mod.available():
+            return _answer_llm(question, mod.generate_sql, provider)
+        provider = "offline"  # documented fallback: no key / local model server down
+    elif provider != "offline":  # azure_openai is Phase C
         provider = "offline"
     routes, months = _vocab()
     it = offline.parse(question, set(routes), list(months))
@@ -94,3 +103,44 @@ def answer(question: str, provider: str | None = None) -> dict:
     return {"answer": text, "refused": False, "table": {"columns": cols, "rows": rows}, "sql": res.sql,
             "date_range": rng, "definitions": [{**d, "link": f"/methodology#{d['name']}"}] if d else [],
             "caveat": caveat, "suggestions": [], "provider": provider, "intent": it.kind}
+
+
+def _answer_llm(question: str, generate_sql, provider: str) -> dict:
+    """An LLM writes the SQL; the validator, read-only connection, limit and timeout still apply."""
+    _, months = _vocab()
+    try:
+        sql = generate_sql(question, list(months))
+    except Exception as e:  # noqa: BLE001
+        out = refuse(f"the {provider} model did not respond ({type(e).__name__})")
+        out["provider"] = provider
+        return out
+    if not sql:
+        out = refuse("the question is outside the allowlisted reliability views")
+        out["provider"] = provider
+        return out
+    try:
+        res = run_query(sql)
+    except (ValidationError, TimeoutError) as e:
+        out = refuse(f"the generated query was rejected by the validator: {e}")
+        out.update(provider=provider, rejected_sql=sql)
+        return out
+    if not res.rows:
+        out = refuse("no rows matched")
+        out["provider"] = provider
+        return out
+    col = next((c for c, *_ in offline.METRICS if c in res.columns), None)
+    if col is not None:
+        ci = res.columns.index(col)
+        parts = []
+        for r in res.rows[:10]:
+            lab = offline.route_label(str(r[res.columns.index("route_id")])) if "route_id" in res.columns else ""
+            mon = r[res.columns.index("month")] if "month" in res.columns else ""
+            parts.append(f"{lab} {mon} {offline.fmt(col, r[ci])}".strip())
+        text = f"{next(m[3] for m in offline.METRICS if m[0] == col).capitalize()}: " + "; ".join(parts) + "."
+    else:
+        text = f"{len(res.rows)} row(s) returned."
+    d = get_definition(offline.DEF_NAME[col]) if col else None
+    return {"answer": text, "refused": False, "table": {"columns": res.columns, "rows": res.rows}, "sql": res.sql,
+            "date_range": {"start_month": months[0], "end_month": months[-1]},
+            "definitions": [{**d, "link": f"/methodology#{d['name']}"}] if d else [], "caveat": None,
+            "suggestions": [], "provider": provider}
