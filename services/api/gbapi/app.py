@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 import hmac
 import io
 import json
 import logging
 import os
+import re
 import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from gbcore import definitions
 from gbcore.geo import to_metric
 from gbcore.settings import REPO_ROOT, get_settings
@@ -26,8 +26,10 @@ from gbcore.timeutil import AGENCY_TZ, service_date_for, service_day_reference
 from gbstream.network import Network
 from shapely import STRtree
 from shapely.geometry import Point
+from sse_starlette.sse import EventSourceResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from .jobs import Job, JobStore
 from .pipeline import LivePipeline
 from .predict import HistoricalPredictor, range_words
 
@@ -117,7 +119,9 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
     app = FastAPI(title="GhostBus API", version="0.1.0", lifespan=lifespan,
                   description="Real-time bus reliability: ghost-bus detection, calibrated arrival ranges and "
                               "reliability scores from MBTA open data.")
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"])
+    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"],
+                       expose_headers=["X-Job-Id"])
+    jobs = JobStore()
 
     from .keys import ANON_PER_MIN, KeyStore
 
@@ -391,21 +395,14 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
 
         async def gen():
             try:
-                yield f"event: hello\ndata: {json.dumps({'route': route, 'feed_health': c.feed_health()})}\n\n"
+                yield {"event": "hello", "data": json.dumps({"route": route, "feed_health": c.feed_health()})}
                 while True:
-                    if await request.is_disconnected():
-                        break
-                    try:
-                        msg = await asyncio.wait_for(q.get(), timeout=15)
-                    except TimeoutError:
-                        yield ": keepalive\n\n"
-                        continue
-                    yield f"event: {msg['type']}\ndata: {json.dumps(msg, default=str)}\n\n"
+                    msg = await q.get()
+                    yield {"event": msg["type"], "data": json.dumps(msg, default=str)}
             finally:
                 c.pipeline.bc.unsubscribe(q)
 
-        return StreamingResponse(gen(), media_type="text/event-stream",
-                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+        return EventSourceResponse(gen(), ping=15, headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     # ------------------------------------------------------------------ reliability
     def _rm(c: AppContext) -> pd.DataFrame:
@@ -475,18 +472,60 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
         })
 
     # ------------------------------------------------------------------ copilot
-    @app.post("/v1/copilot/ask")
-    async def copilot_ask(request: Request, c: AppContext = Depends(ctx)):
+    # Model calls never run on the request path: a POST starts a background job and returns 202 at once;
+    # progress (one event per graph node) and the final answer stream over SSE.
+    async def _json_body(request: Request) -> dict:
         try:
-            body = await request.json()
+            return await request.json()
         except Exception:  # noqa: BLE001
             raise Problem(400, "Invalid JSON body") from None
+
+    def _start_copilot(body: dict) -> Job:
         q = str(body.get("question", ""))[:1000]
         if not q.strip():
             raise Problem(422, "question is required")
-        from gbcopilot.agent import answer
+        tid = str(body.get("thread_id") or "")[:64] or None
+        from gbcopilot.agent import stream as copilot_stream
 
-        return envelope(c, await asyncio.to_thread(answer, q))
+        return jobs.start("copilot", lambda: copilot_stream(q, thread_id=tid))
+
+    @app.post("/v1/copilot/jobs", status_code=202)
+    async def copilot_job(request: Request, c: AppContext = Depends(ctx)):
+        job = _start_copilot(await _json_body(request))
+        return envelope(c, job.summary(), live=True)
+
+    @app.post("/v1/copilot/chat")
+    async def copilot_chat(request: Request):
+        """Start a copilot job and stream its progress and answer as SSE in the same response."""
+        job = _start_copilot(await _json_body(request))
+        return EventSourceResponse(jobs.events(job.id), ping=15, headers={"X-Job-Id": job.id})
+
+    @app.post("/v1/brief/jobs", status_code=202)
+    async def brief_job(request: Request, c: AppContext = Depends(ctx)):
+        body = await _json_body(request)
+        month = body.get("month")
+        if month is not None and not re.fullmatch(r"20\d\d-(0[1-9]|1[0-2])", str(month)):
+            raise Problem(422, "month must be YYYY-MM")
+        from gbcopilot.brief import daily_brief
+
+        def run():
+            yield {"type": "progress", "node": "fan_out"}
+            yield {"type": "brief", **daily_brief(month)}
+
+        return envelope(c, jobs.start("brief", run).summary(), live=True)
+
+    @app.get("/v1/jobs/{job_id}")
+    def job_status(job_id: str, c: AppContext = Depends(ctx)):
+        job = jobs.get(job_id)
+        if job is None:
+            raise Problem(404, "Unknown job")
+        return envelope(c, {**job.summary(), "result": job.result}, live=True)
+
+    @app.get("/v1/jobs/{job_id}/events")
+    async def job_events(job_id: str):
+        if jobs.get(job_id) is None:
+            raise Problem(404, "Unknown job")
+        return EventSourceResponse(jobs.events(job_id), ping=15)
 
     # ------------------------------------------------------------------ admin
     @app.get("/admin/v1/feed-health", dependencies=[Depends(require_admin)])

@@ -45,3 +45,47 @@ then `MODE=full STREAM_BUS=redis LIVE_STATE=redis DATABASE_URL=postgresql+psycop
 ## Data & licenses
 MBTA GTFS / GTFS-Realtime (MassDOT Developers License Agreement), MBTA Bus Arrival Departure Times (CC0), map tiles ©
 OpenStreetMap contributors. Raw data is never committed; hashes are in `data/manifest.json`. Not an official MBTA product.
+
+## MCP server: connect from any MCP client
+
+GhostBus ships a read-only MCP server (official Python MCP SDK) with four tools: `get_route_metrics`,
+`get_missed_trip_rates`, `compare_routes` and `get_definition`. Arguments are checked against fixed vocabularies and
+every query goes through the same sqlglot validator, allowlist, read-only DuckDB connection, 500-row limit and 5 s
+timeout as the copilot. The LangGraph copilot itself calls these tools through `langchain-mcp-adapters`.
+
+Run it over stdio:
+
+```
+uv run python -m gbcopilot.mcp_server
+```
+
+**Claude Desktop / Claude Code / Cursor** (`mcpServers` entry; use your absolute repo path):
+
+```json
+{
+  "mcpServers": {
+    "ghostbus": {
+      "command": "uv",
+      "args": ["--directory", "C:/path/to/ghostbus", "run", "python", "-m", "gbcopilot.mcp_server"]
+    }
+  }
+}
+```
+
+Claude Code: `claude mcp add ghostbus -- uv --directory C:/path/to/ghostbus run python -m gbcopilot.mcp_server`.
+
+**MCP Inspector:** `npx @modelcontextprotocol/inspector uv run python -m gbcopilot.mcp_server`.
+
+**From Python (LangChain):**
+
+```python
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+client = MultiServerMCPClient({"ghostbus": {"command": "uv", "args": ["run", "python", "-m", "gbcopilot.mcp_server"],
+                                            "transport": "stdio"}})
+tools = await client.get_tools()
+```
+
+Every tool is annotated `readOnlyHint: true`, `openWorldHint: false`. Contract tests: `tests/test_copilot_graph.py`
+(tool list and schemas, happy paths, rejected arguments, parity with direct SQL).
+

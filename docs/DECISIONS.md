@@ -72,3 +72,17 @@ months as "future" and refuses them, while sometimes answering real forecast que
 now says every listed month is past, and forecast questions are refused by a regex before any LLM call. Requests
 carry `seed: 7` for best-effort repeatability. Result over 4 runs: 97.5–100% gold, 100% refusals, 0 red-team
 failures. Known flaky item: "bunching rate of route 39 in the evening in December 2025" is sometimes refused.
+
+## Copilot rebuilt on LangChain v1 + LangGraph v1 with an MCP tool layer (2026-11-24)
+- Graph: contextualize → classify → plan → (MCP tool | generate SQL → validate → execute) → check → answer; methodology
+  questions go retrieve → cited answer. Validation/execution/empty-result failures retry up to 2 times, then refuse.
+- Tools are served by a GhostBus MCP server (official SDK) and reached through langchain-mcp-adapters on one persistent
+  session (in-process memory transport by default, stdio optional) so tool calls don't respawn a server.
+- Deterministic guards stay in code, not prompts: forecast refusal, day_type/time_band default filters, tool-argument
+  normalisation (model slips such as a single route in compare_routes). The validator remains the security boundary.
+- Cheap tier (gpt-4o-mini) for contextualize/classify/plan/SQL/rerank; strong tier (gpt-4o) for answers, briefs and the
+  judge. IDs in config/models.yaml, checked with models.list().
+- Offline, a fake chat model backed by the intent templates runs the same graph, so tests and CI never call the API.
+- Methodology RAG: BM25 + dense (RRF) then a reranker; bge-reranker-base on CPU is the default when the `rerank` extra is
+  installed (offline ablation: recall@3 0.812 → 0.938), else the cheap LLM reranker when a key is set.
+- pandas pinned < 3: Evidently 0.7.23 (latest) does not import with pandas 3.

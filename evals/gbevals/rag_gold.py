@@ -1,0 +1,40 @@
+"""Methodology retrieval gold set: questions paraphrased away from the passage wording, each with the passage ids
+that answer it (any of them counts as relevant)."""
+
+from __future__ import annotations
+
+GOLD: list[tuple[str, list[str]]] = [
+    ("How is on-time performance calculated?", ["def:on_time_performance", "note:thresholds"]),
+    ("How late can a bus be and still count as on time?", ["note:thresholds", "def:on_time_performance"]),
+    ("Is a bus that leaves its first stop two minutes early on time?", ["def:on_time_performance"]),
+    ("What does headway adherence measure?", ["def:headway_adherence"]),
+    ("How far off the scheduled gap between buses is still acceptable?", ["def:headway_adherence", "note:thresholds"]),
+    ("How do you work out excess wait time?", ["def:excess_wait_time"]),
+    ("What formula gives the average wait from headways?", ["def:excess_wait_time"]),
+    ("When are two buses considered bunched?", ["def:bunching_rate", "note:thresholds"]),
+    ("How is bunching measured?", ["def:bunching_rate"]),
+    ("What is the missed-trip rate a ratio of?", ["def:missed_trip_rate"]),
+    ("How do you decide a trip never ran in the historical data?", ["ghost:historical_missed_trip"]),
+    ("Why are some route-days left out of the missed-trip numbers?", ["ghost:historical_missed_trip", "gap:0",
+                                                                     "note:thresholds"]),
+    ("What counts as a ghost bus right now?", ["ghost:high"]),
+    ("When does a trip get flagged High?", ["ghost:high"]),
+    ("What does the Elevated state mean?", ["ghost:elevated"]),
+    ("What happens to ghost alerts when the realtime feed goes down?", ["ghost:unknown", "note:unknown_policy"]),
+    ("Why would a trip show Unknown instead of missed?", ["ghost:unknown", "note:unknown_policy"]),
+    ("What does Low mean for a trip?", ["ghost:low"]),
+    ("How do you handle a bus that is running the wrong trip?", ["ghost:reassignment_v1_1"]),
+    ("What changed between ghost definition v1.0 and v1.1?", ["note:ghost_versions", "ghost:reassignment_v1_1"]),
+    ("Where does the probability next to a ghost badge come from?", ["ghost:prior", "note:missed_prior"]),
+    ("What does the 80% range on arrival times mean?", ["note:arrival_ranges", "def:coverage_of_intervals"]),
+    ("How do you check the arrival ranges are honest?", ["def:coverage_of_intervals", "note:arrival_ranges"]),
+    ("What is shown when the model has no prediction for a bus?", ["note:arrival_ranges"]),
+    ("Where does the arrival and departure history come from?", ["source:1"]),
+    ("What license covers the schedule data?", ["source:0"]),
+    ("Who provides the live vehicle positions?", ["source:2"]),
+    ("What are the map tiles licensed under?", ["source:3"]),
+    ("Does the arrival data cover every stop?", ["gap:1"]),
+    ("Do you store where riders are?", ["note:privacy"]),
+    ("Why does replaying old feeds give the same results as live?", ["note:event_time"]),
+    ("How complete must a day's data be to count?", ["note:thresholds", "ghost:historical_missed_trip", "gap:0"]),
+]

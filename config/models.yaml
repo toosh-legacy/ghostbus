@@ -1,0 +1,28 @@
+# LLM model config. IDs are checked against client.models.list() before any live call.
+# Prices are list prices in USD per 1M tokens (verify on the provider's pricing page); used by the cost guard.
+provider: openai
+tiers:
+  cheap:
+    model: gpt-4o-mini
+    input_per_mtok: 0.15
+    output_per_mtok: 0.60
+  strong:
+    model: gpt-4o
+    input_per_mtok: 2.50
+    output_per_mtok: 10.00
+embeddings:
+  model: text-embedding-3-small
+  input_per_mtok: 0.02
+# Which tier each role uses: cheap for routing and SQL drafts, strong for answers and the eval judge.
+roles:
+  contextualize: cheap
+  classify: cheap
+  plan: cheap
+  sql: cheap
+  rerank: cheap
+  brief_map: cheap
+  answer: strong
+  methodology: strong
+  brief_reduce: strong
+  judge: strong
+cost_limit_usd_per_session: 3.0

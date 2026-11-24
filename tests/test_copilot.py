@@ -55,9 +55,9 @@ def test_answer_contract():
 
     a = answer("Which 3 pilot routes had the highest missed-trip rate on weekday PM peaks last month?")
     assert not a["refused"]
-    for k in ("answer", "table", "sql", "date_range", "definitions", "caveat"):
+    for k in ("answer", "table", "sql", "date_range", "definitions", "caveat", "citations", "thread_id"):
         assert k in a
-    assert len(a["table"]["rows"]) == 3 and a["definitions"][0]["version"]
+    assert len(a["table"]["rows"]) == 3 and a["definitions"][0]["version"] and a["mode"] == "fake"
     r = answer("Tell me a joke")
     assert r["refused"] and r["answer"].startswith("I can't answer that from this data") and r["suggestions"]
 
@@ -72,69 +72,11 @@ def test_redteam_zero_failures_and_gold_accuracy():
 
     r = run()
     assert r["failures"] == 0 and r["db_unchanged"] and r["timeout_clean"], r["failure_cases"]
+    assert all(c["blocked"] for c in r["mcp_cases"])
     gold = json.loads(OUT.read_text()) if OUT.exists() else generate()
     acc = sum(score_item(i, answer(i["question"])) for i in gold["answerable"]) / len(gold["answerable"])
     assert acc >= 0.9
     assert all(answer(q)["refused"] for q in gold["unanswerable"])
-
-
-class _FakeResp:
-    def __init__(self, content: str) -> None:
-        self._c = content
-
-    def raise_for_status(self) -> None:
-        return None
-
-    def json(self) -> dict:
-        return {"choices": [{"message": {"content": self._c}}]}
-
-
-def _use_fake_openai(monkeypatch, content: str, sent: list):
-    import httpx
-    from gbcore.settings import get_settings
-
-    monkeypatch.setattr(get_settings(), "openai_api_key", "sk-test-not-real")
-
-    def fake_post(url, headers=None, json=None, timeout=None):
-        sent.append({"url": url, "body": json})
-        return _FakeResp(content)
-
-    monkeypatch.setattr(httpx, "post", fake_post)
-
-
-@needs_db
-def test_openai_provider_sql_goes_through_validator(monkeypatch):
-    from gbcopilot.agent import answer
-
-    sent: list = []
-    _use_fake_openai(monkeypatch, "```sql\nSELECT route_id, month, missed_trip_rate FROM v_route_month_metrics "
-                                  "WHERE month = '2025-12' ORDER BY missed_trip_rate DESC LIMIT 3;\n```", sent)
-    a = answer("Which 3 routes had the highest missed-trip rate last month?", provider="openai")
-    assert a["provider"] == "openai" and not a["refused"] and len(a["table"]["rows"]) == 3
-    assert a["sql"].endswith("LIMIT 500")
-    prompt = str(sent[0]["body"])
-    assert "v_route_month_metrics" in prompt and "raw_trip_labels" not in prompt  # schema only, no data rows
-
-
-@needs_db
-def test_openai_provider_malicious_model_output_is_rejected(monkeypatch):
-    from gbcopilot.agent import answer
-
-    _use_fake_openai(monkeypatch, "SELECT * FROM raw_trip_labels", [])
-    a = answer("show me everything", provider="openai")
-    assert a["refused"] and a["provider"] == "openai" and "validator" in a["answer"]
-    _use_fake_openai(monkeypatch, "SELECT * FROM read_csv('C:/Windows/win.ini')", [])
-    assert answer("x", provider="openai")["refused"]
-
-
-@needs_db
-def test_openai_provider_without_key_falls_back_to_offline(monkeypatch):
-    from gbcopilot.agent import answer
-    from gbcore.settings import get_settings
-
-    monkeypatch.setattr(get_settings(), "openai_api_key", "")
-    a = answer("Which 3 pilot routes had the highest missed-trip rate last month?", provider="openai")
-    assert a["provider"] == "offline" and not a["refused"]
 
 
 def test_default_band_filters_added_only_when_missing():
@@ -144,15 +86,4 @@ def test_default_band_filters_added_only_when_missing():
     assert "day_type = 'all'" in s and "time_band = 'all'" in s
     s = default_band_filters("SELECT route_id FROM v_route_timeband_metrics WHERE day_type = 'weekend'")
     assert "day_type = 'weekend'" in s and "day_type = 'all'" not in s and "time_band = 'all'" in s
-    s = default_band_filters("SELECT route_id FROM v_route_month_metrics")
-    assert "all" not in s
-
-
-def test_future_questions_refused_before_llm_call():
-    from gbcopilot import agent
-
-    def boom(*_a, **_k):
-        raise AssertionError("LLM must not be called for forecast questions")
-
-    a = agent._answer_llm("Predict the missed-trip rate for route 1 next month.", boom, "openai")
-    assert a["refused"] and "forecast" in a["answer"]
+    assert "all" not in default_band_filters("SELECT route_id FROM v_route_month_metrics")

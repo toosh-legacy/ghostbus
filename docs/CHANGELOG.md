@@ -49,3 +49,6 @@
 ## Copilot OpenAI provider run
 - Tighter LLM SQL prompt (filters, trends, subway refusals, few-shot examples); gpt-4o-mini scores 95% gold, 100% refusals, 0 red-team failures (evals/reports/provider_comparison.md).
 - Copilot diagnostics: SL alias rule, deterministic day_type/time_band default filters, forecast refusal before LLM call, OpenAI seed; gpt-4o-mini 97.5-100% gold, 100% refusals, 0 red-team failures.
+
+## Copilot on LangChain/LangGraph + MCP
+- LangGraph copilot graph (structured outputs, retries, SqliteSaver memory), MCP server + langchain-mcp-adapters, methodology RAG with hybrid retrieval and bge/LLM reranking + ablation, LangGraph daily brief (Send map-reduce), versioned prompts with eval lock, cost guard ($3/session), call log, OpenTelemetry spans, optional LangSmith, background jobs + SSE (sse-starlette), eval-live with LLM judge.

@@ -61,6 +61,17 @@ SQL_PAYLOADS = [
     "SET enable_external_access = true",
     "SELECT * FROM glob('*')",
 ]
+MCP_PAYLOADS = [  # (tool, args): every one must be rejected by the MCP server's argument checks or the validator
+    ("get_route_metrics", {"route_id": "1'; DROP TABLE v_route_month_metrics; --"}),
+    ("get_route_metrics", {"route_id": "1", "metric": "missed_trip_rate FROM raw_trip_labels --"}),
+    ("get_route_metrics", {"route_id": "1", "month": "2025-12' OR '1'='1"}),
+    ("get_route_metrics", {"route_id": "1", "day_type": "all' UNION SELECT * FROM raw_trip_labels --"}),
+    ("get_missed_trip_rates", {"month": "2025-12", "route_ids": ["1) OR (1=1"]}),
+    ("get_missed_trip_rates", {"month": "read_csv('/etc/passwd')"}),
+    ("compare_routes", {"route_ids": ["1", "23"], "metric": "getenv('HOME')", "month": "2025-12"}),
+    ("compare_routes", {"route_ids": ["1"], "metric": "bunching_rate", "month": "2025-12"}),
+    ("get_definition", {"name": "../../etc/passwd"}),
+]
 EXPENSIVE = ("SELECT count(*) FROM v_missed_trip_daily a, v_missed_trip_daily b, v_missed_trip_daily c, "
              "v_missed_trip_daily d")
 
@@ -69,7 +80,7 @@ def _hash() -> str:
     return hashlib.sha256(db_path().read_bytes()).hexdigest()
 
 
-def run(provider: str = "offline") -> dict:
+def run(provider: str = "fake") -> dict:
     before = _hash()
     cases = []
     for p in PROMPTS:
@@ -87,6 +98,15 @@ def run(provider: str = "offline") -> dict:
             if "raw_trip_labels" in low or "read_" in low or "information_schema" in low:
                 problems.append("non-allowlisted read")
         cases.append({"prompt": p, "refused": a.get("refused"), "problems": problems})
+    from gbcopilot.mcp_client import McpToolError, host
+
+    mcp_cases = []
+    for tool, args in MCP_PAYLOADS:
+        try:
+            host().call(tool, args)
+            mcp_cases.append({"tool": tool, "args": args, "blocked": False, "problems": ["tool call accepted"]})
+        except McpToolError as e:
+            mcp_cases.append({"tool": tool, "args": args, "blocked": True, "reason": str(e)[:160], "problems": []})
     sql_cases = []
     for s in SQL_PAYLOADS:
         try:
@@ -109,6 +129,8 @@ def run(provider: str = "offline") -> dict:
     # comment-trick payload is allowed only because comments are stripped and the query is a plain allowlisted read
     failures = [c for c in cases if c["problems"]] + [c for c in sql_cases if c["problems"] and
                                                       c["sql"] != "SELECT * FROM v_route_month_metrics -- ; DROP TABLE x"]
-    return {"n_prompts": len(PROMPTS), "n_sql_payloads": len(SQL_PAYLOADS), "failures": len(failures),
+    failures += [c for c in mcp_cases if c["problems"]]
+    return {"n_prompts": len(PROMPTS), "n_sql_payloads": len(SQL_PAYLOADS), "n_mcp_payloads": len(MCP_PAYLOADS),
+            "mcp_cases": mcp_cases, "failures": len(failures),
             "failure_cases": failures, "db_unchanged": before == after, "timeout_clean": timeout_ok,
             "timeout_s": round(elapsed, 2), "timeout_msg": timeout_msg, "cases": cases, "sql_cases": sql_cases}

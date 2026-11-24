@@ -1,0 +1,42 @@
+{
+  "answer": {
+    "sha": "c979b4038a45fa1b",
+    "version": 2
+  },
+  "brief_map": {
+    "sha": "f72e7f0cb7e13d56",
+    "version": 1
+  },
+  "brief_reduce": {
+    "sha": "4db037b862f37208",
+    "version": 1
+  },
+  "classify": {
+    "sha": "7f7cc14fd3d45e73",
+    "version": 1
+  },
+  "contextualize": {
+    "sha": "f4b14bfd9a72da82",
+    "version": 1
+  },
+  "judge": {
+    "sha": "4a218f63dca615d3",
+    "version": 1
+  },
+  "methodology": {
+    "sha": "9453ef5a2843cc20",
+    "version": 1
+  },
+  "plan": {
+    "sha": "dbec85f7ea0f73fd",
+    "version": 2
+  },
+  "rerank": {
+    "sha": "b0fc046843968a5a",
+    "version": 1
+  },
+  "sql": {
+    "sha": "2d12b2a4f1149d2a",
+    "version": 2
+  }
+}
