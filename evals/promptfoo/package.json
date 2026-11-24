@@ -1,0 +1,6 @@
+{
+  "name": "ghostbus-promptfoo",
+  "private": true,
+  "scripts": { "eval": "promptfoo eval -c promptfooconfig.yaml --no-cache --no-progress-bar -j 1" },
+  "devDependencies": { "promptfoo": "0.120.10" }
+}

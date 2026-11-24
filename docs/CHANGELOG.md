@@ -58,3 +58,7 @@
 
 ## Web: AI SDK chat, MapLibre + deck.gl, Recharts, shadcn/ui, Vitest
 - /ask streams copilot progress and answers through a Vercel AI SDK chat route; live map on MapLibre GL + deck.gl; Recharts trend and missed-trip charts; shadcn/ui components; Vitest unit tests; regenerated openapi-typescript client; Playwright + axe e2e passing.
+
+## Quality gates
+- mypy clean across 72 modules (scoped relaxations for pandas-heavy numeric modules), promptfoo red-team suite (47 cases) in CI, pre-commit (ruff, mypy, gitleaks, prompt lock), CI jobs for Python, promptfoo and web (typecheck, lint, Vitest, build).
+- Recorder: single-worker scheduler + manifest write lock (fixes interleaved manifest lines).

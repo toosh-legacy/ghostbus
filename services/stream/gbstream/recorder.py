@@ -20,6 +20,7 @@ import logging
 import os
 import signal
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -97,6 +98,7 @@ class Recorder:
         self._last_hb = 0.0
         self._stop = False
         self._scheduler = None
+        self._io_lock = threading.Lock()  # manifest and heartbeat writes are serialised
 
     def stop(self, *_args) -> None:
         self._stop = True
@@ -150,7 +152,7 @@ class Recorder:
             fs.next_due = time.monotonic() + delay
             log.warning("%s fetch failed (%s); backing off %.0fs", fs.name, fs.last_error, delay)
         self.manifest.parent.mkdir(parents=True, exist_ok=True)
-        with self.manifest.open("a", encoding="utf-8") as m:
+        with self._io_lock, self.manifest.open("a", encoding="utf-8") as m:
             m.write(json.dumps(rec) + "\n")
 
     def write_heartbeat(self, stopped: bool = False) -> None:
@@ -206,7 +208,10 @@ class Recorder:
         self.var_dir.mkdir(parents=True, exist_ok=True)
         own = client is None
         client = client or httpx.Client(follow_redirects=True)
-        sched = BlockingScheduler(timezone="UTC")
+        from apscheduler.executors.pool import ThreadPoolExecutor
+
+        # one worker: feeds are fetched one at a time (polite, and file writes never interleave)
+        sched = BlockingScheduler(timezone="UTC", executors={"default": ThreadPoolExecutor(1)})
         self._scheduler = sched
 
         def poll(fs: FeedState) -> None:

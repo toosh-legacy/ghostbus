@@ -20,6 +20,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Any
 
 from gbcore.interfaces import Broadcaster, MemoryLiveState
 from gbcore.settings import get_settings
@@ -62,7 +63,7 @@ class LivePipeline:
         self.prediction_log: list[dict] | None = None  # set by the API (shared with the stop page)
         self.db_sink = None
         self._last_db_flush = float("-inf")
-        self.scheduler = None
+        self.scheduler: Any = None  # APScheduler AsyncIOScheduler once tailing starts
         self.feed_stale = False
         self.db_flush_every_s = 60.0
         if persist:
@@ -167,12 +168,13 @@ class LivePipeline:
     def start_scheduler(self) -> None:
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-        self.scheduler = AsyncIOScheduler(timezone="UTC")
-        self.scheduler.add_job(self._poll_lake, "interval", seconds=5, id="tail_poll", max_instances=1,
-                               coalesce=True, next_run_time=datetime.now(UTC))
-        self.scheduler.add_job(self._ghost_staleness, "interval", seconds=30, id="ghost_staleness",
-                               max_instances=1, coalesce=True)
-        self.scheduler.start()
+        sched = AsyncIOScheduler(timezone="UTC")
+        sched.add_job(self._poll_lake, "interval", seconds=5, id="tail_poll", max_instances=1, coalesce=True,
+                      next_run_time=datetime.now(UTC))
+        sched.add_job(self._ghost_staleness, "interval", seconds=30, id="ghost_staleness", max_instances=1,
+                      coalesce=True)
+        sched.start()
+        self.scheduler = sched
 
     async def _tail(self) -> None:
         self.start_scheduler()

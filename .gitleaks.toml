@@ -1,0 +1,14 @@
+# gitleaks: default rules plus an explicit OpenAI key rule. The real key lives only in the git-ignored .env.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API key"
+regex = '''sk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{20,}'''
+keywords = ["sk-"]
+
+[allowlist]
+description = "fixtures and generated files"
+paths = ['''apps/web/node_modules''', '''evals/promptfoo/node_modules''', '''\.venv''', '''uv\.lock''', '''package-lock\.json''']
+regexes = ['''sk-test-not-real''']

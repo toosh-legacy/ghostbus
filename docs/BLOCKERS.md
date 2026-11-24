@@ -18,3 +18,10 @@ Heartbeat stopped during the memory-heavy training + live-eval window; no error 
 (process reaped under memory pressure). Restarted on the APScheduler-based recorder; gap recorded in
 var/recorder_gaps.log. Replays and metrics treat the window as missing data (unknown), never missed. The scheduled-task
 watchdog from #10 would have restarted it within a minute; still recommended.
+
+## 12. Background runs reaped under memory pressure (2026-11-24 ~08:40 UTC)
+Claude Code stopped the full pytest run and the live-eval rerun while the machine was critically low on memory
+(other projects' eval processes were also running). Not restarted automatically. Verified instead: ruff, mypy (72
+files), targeted tests for every module changed since the last full pass (61 passed), promptfoo 47/47, Playwright +
+axe e2e. The live-eval rerun with judge v2 and the new guards is pending (`make eval-live`, about $0.15); the report
+in evals/reports/live.md is from the run before those fixes.

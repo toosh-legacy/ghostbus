@@ -79,7 +79,7 @@ def validate(sql: str) -> str:
         if name not in ALLOWLISTED_VIEWS and name not in ctes:
             raise ValidationError(f"table '{t.name}' is not an allowlisted view")
     for f in root.find_all(exp.Func):
-        name = _func_name(f)
+        name = _func_name(f)  # type: ignore[arg-type]  # sqlglot Func is an Expression at runtime
         if name in FILE_FUNCS or isinstance(f, exp.ReadCSV if hasattr(exp, "ReadCSV") else ()):
             raise ValidationError(f"function {name} is not allowed")
         if isinstance(f, exp.Anonymous) and name not in SAFE_FUNCS:

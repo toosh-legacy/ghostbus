@@ -21,3 +21,5 @@ apps/web/playwright-report/
 # stray MLflow default stores (the real one lives in var/mlflow)
 mlflow.db
 mlruns/
+evals/promptfoo/node_modules/
+evals/reports/promptfoo.json

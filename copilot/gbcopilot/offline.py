@@ -68,8 +68,7 @@ def _find_routes(q: str, valid: set[str]) -> list[str]:
         if r in valid and r not in out and not re.search(rf"\b(top|worst|best|bottom|first)\s+{m.group(1)}\b", ql) \
                 and not re.search(rf"\b{m.group(1)}\s+(routes|pilot)", ql):
             out.append(r)
-    seen = set()
-    return [r for r in out if not (r in seen or seen.add(r))]
+    return list(dict.fromkeys(out))  # de-duplicate, keep order
 
 
 def parse(q: str, valid_routes: set[str], months_available: list[str]) -> Intent:
@@ -100,10 +99,10 @@ def parse(q: str, valid_routes: set[str], months_available: list[str]) -> Intent
             it.months = [latest]
     it.months.sort()
     it.routes = _find_routes(q, valid_routes)
-    m = re.search(r"\b(?:top|worst|best|bottom|first)\s+(\d{1,2})\b|\b(\d{1,2})\s+(?:pilot\s+)?routes\b", ql)
+    nm = re.search(r"\b(?:top|worst|best|bottom|first)\s+(\d{1,2})\b|\b(\d{1,2})\s+(?:pilot\s+)?routes\b", ql)
     words = {"three": 3, "five": 5, "two": 2, "four": 4, "ten": 10}
-    if m:
-        it.n = int(m.group(1) or m.group(2))
+    if nm:
+        it.n = int(nm.group(1) or nm.group(2))
     else:
         for w, n in words.items():
             if re.search(rf"\b(top|worst|best|bottom)\s+{w}\b|\b{w}\s+(pilot\s+)?routes\b", ql):
@@ -152,7 +151,7 @@ def parse(q: str, valid_routes: set[str], months_available: list[str]) -> Intent
 
 
 def to_sql(it: Intent, latest_month: str) -> tuple[str, dict]:
-    col = it.metric
+    col = it.metric or ""
     month = it.months[0] if it.months else latest_month
     base = f"FROM v_route_timeband_metrics WHERE day_type = '{it.day_type}' AND time_band = '{it.band}'"
     rl = ", ".join(f"'{r}'" for r in it.routes)

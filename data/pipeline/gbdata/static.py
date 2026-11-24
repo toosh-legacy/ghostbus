@@ -57,7 +57,7 @@ def stop_distances_on_shape(line: LineString, stops_xy: list[tuple[float, float]
         if best_d is None:
             best_d = prev
             best_off = line.interpolate(prev).distance(p)
-        out.append((float(best_d), float(best_off)))
+        out.append((float(best_d), float(best_off)))  # type: ignore[arg-type]
         prev = best_d
     return out
 

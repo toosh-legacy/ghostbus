@@ -1,0 +1,35 @@
+# Install once: uv run pre-commit install   ·   run on everything: uv run pre-commit run --all-files
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+        exclude: ^apps/web/tsconfig\.json$
+      - id: check-added-large-files
+        args: ["--maxkb=1500"]
+      - id: detect-private-key
+      - id: check-merge-conflict
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (project config)
+        entry: uv run mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: prompt-lock
+        name: prompts changed only with passing evals (eval_lock.json)
+        entry: uv run python -c "from gbcopilot.prompting import unlocked; import sys; u = unlocked(); print('unlocked prompts:', u) if u else None; sys.exit(1 if u else 0)"
+        language: system
+        files: ^copilot/gbcopilot/prompts/
+        pass_filenames: false

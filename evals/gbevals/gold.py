@@ -52,7 +52,7 @@ def generate(seed: int = 2025) -> dict:
     m = pd.read_parquet(get_settings().lake_dir / "curated" / "metrics" / "route_metrics.parquet")
     months = sorted(m["month"].unique())
     routes = sorted(m["route_id"].unique())
-    items = []
+    items: list[dict] = []
 
     def sub(month, band, day):
         return m[(m["month"] == month) & (m["time_band"] == band) & (m["day_type"] == day)]

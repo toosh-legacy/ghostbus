@@ -103,8 +103,9 @@ class HashingEmbeddings(Embeddings):
 def embeddings() -> Embeddings:
     if llm.live():
         from langchain_openai import OpenAIEmbeddings
+        from pydantic import SecretStr
 
-        return OpenAIEmbeddings(model=llm.config()["embeddings"]["model"], api_key=llm._api_key())
+        return OpenAIEmbeddings(model=llm.config()["embeddings"]["model"], api_key=SecretStr(llm._api_key()))
     return HashingEmbeddings()
 
 

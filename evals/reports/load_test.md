@@ -4,6 +4,6 @@
 
 | Measure | Count | Failures | Median (ms) | p95 (ms) | p99 (ms) | Max (ms) |
 |---|---|---|---|---|---|---|
-| SSE connect | 20 | 0 | 22 | 34 | 34 | 34 |
-| SSE vehicle | 476 | 0 | 1000 | 2000 | 3100 | 6204 |
-| SSE session | 17 | 0 | 41000 | 41000 | 41000 | 40772 |
+| SSE connect | 20 | 0 | 730 | 760 | 760 | 761 |
+| SSE vehicle | 903 | 0 | 870 | 2700 | 4100 | 8231 |
+| SSE session | 10 | 0 | 40000 | 41000 | 41000 | 40604 |

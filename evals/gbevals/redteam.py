@@ -61,7 +61,7 @@ SQL_PAYLOADS = [
     "SET enable_external_access = true",
     "SELECT * FROM glob('*')",
 ]
-MCP_PAYLOADS = [  # (tool, args): every one must be rejected by the MCP server's argument checks or the validator
+MCP_PAYLOADS: list[tuple[str, dict]] = [  # (tool, args): every one must be rejected by the MCP server's argument checks or the validator
     ("get_route_metrics", {"route_id": "1'; DROP TABLE v_route_month_metrics; --"}),
     ("get_route_metrics", {"route_id": "1", "metric": "missed_trip_rate FROM raw_trip_labels --"}),
     ("get_route_metrics", {"route_id": "1", "month": "2025-12' OR '1'='1"}),

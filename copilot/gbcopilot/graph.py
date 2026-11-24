@@ -245,7 +245,7 @@ def validate_sql(s: State) -> dict:
         if not s.get("sql"):
             return {"attempts": s.get("attempts", 0) + 1}
         try:
-            validate(s["sql"])
+            validate(s["sql"] or "")
         except ValidationError as e:
             return {"error": f"validator rejected the query: {e}", "attempts": s.get("attempts", 0) + 1}
         return {"error": None}
@@ -254,7 +254,7 @@ def validate_sql(s: State) -> dict:
 def execute(s: State) -> dict:
     with _span("execute"):
         try:
-            res = run_query(s["sql"])
+            res = run_query(s.get("sql") or "")
         except (ValidationError, TimeoutError) as e:
             return {"error": f"query failed: {e}", "attempts": s.get("attempts", 0) + 1}
         return {"result": {"columns": res.columns, "rows": res.rows, "sql": res.sql, "via": "sql"}, "error": None}
@@ -271,7 +271,7 @@ def check_result(s: State) -> dict:
 
 def answer(s: State) -> dict:
     with _span("answer"):
-        r = s["result"]
+        r: dict = s.get("result") or {}
         q = s["standalone"]
         rows = r["rows"][:50]
         text = llm.text("answer", "answer", inputs={"question": q, "columns": r["columns"], "rows": rows},

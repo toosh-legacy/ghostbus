@@ -117,8 +117,8 @@ TASKS = {
     "mcp": lambda: run(PY + ["-m", "gbcopilot.mcp_server"]),
     "brief": lambda: run(PY + ["-m", "gbcopilot.brief"]),
     "lock-prompts": lambda: run(PY + ["-m", "gbevals.run", "--fast", "--lock-prompts"]),
-    "promptfoo": lambda: run(["npx", "--yes", "promptfoo@latest", "eval", "-c", "evals/promptfoo/promptfooconfig.yaml",
-                              "--no-cache", "--no-progress-bar"]),
+    "promptfoo": lambda: run(PY + ["evals/promptfoo/build_config.py"]) or run(
+        ["npm", "--prefix", "evals/promptfoo", "run", "eval", "--", "--no-table", "-o", "../reports/promptfoo.json"]),
     "load-test": lambda: run(PY + ["-m", "gbevals.load_locust"]),
 }
 

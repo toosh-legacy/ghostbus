@@ -15,6 +15,7 @@ from typing import Literal
 
 from gbcore.definitions import get_definition as _get_definition
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
 from .validator import run_query
@@ -112,7 +113,7 @@ def definition(name: str) -> Definition:
 mcp = FastMCP("ghostbus-reliability", log_level="WARNING", instructions=(
     "Read-only MBTA bus reliability metrics for GhostBus pilot routes (Jul-Dec 2025). Rates are fractions 0-1; "
     "excess wait is in seconds. Route ids are strings; SL1 = '741', SL3 = '743'."))
-READ_ONLY = {"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False}
+READ_ONLY = ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=False)
 
 
 @mcp.tool(annotations=READ_ONLY)

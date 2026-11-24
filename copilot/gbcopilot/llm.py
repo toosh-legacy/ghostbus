@@ -28,7 +28,8 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from pydantic import BaseModel
+from langchain_core.runnables import RunnableConfig
+from pydantic import BaseModel, SecretStr
 
 from . import telemetry
 from .prompting import Prompt, load
@@ -224,7 +225,7 @@ def chat(role: str) -> BaseChatModel:
 
         verify_models()
         return ChatOpenAI(model=model_for(role), temperature=0, seed=7, timeout=30, max_retries=2,
-                          api_key=_api_key(), callbacks=[guard()])
+                          api_key=SecretStr(_api_key()), callbacks=[guard()])
     return FakeReliabilityChatModel(role=role, callbacks=[guard()])
 
 
@@ -235,7 +236,7 @@ def _messages(p: Prompt, inputs: dict, vars: dict) -> list[BaseMessage]:
     return [SystemMessage(SYSTEM), HumanMessage(human)]
 
 
-def _config(role: str, p: Prompt) -> dict:
+def _config(role: str, p: Prompt) -> RunnableConfig:
     return {"run_name": p.tag, "metadata": {"role": role, "prompt": p.name, "prompt_version": p.version,
                                             "prompt_tag": p.tag, "prompt_sha": p.sha}}
 
@@ -245,7 +246,8 @@ def structured[T: BaseModel](role: str, prompt: str, schema: type[T], inputs: di
     p = load(prompt)
     msgs = _messages(p, inputs or vars, vars)
     if live():
-        return chat(role).with_structured_output(schema, method="json_schema").invoke(msgs, config=_config(role, p))
+        out = chat(role).with_structured_output(schema, method="json_schema").invoke(msgs, config=_config(role, p))
+        return schema.model_validate(out) if isinstance(out, dict) else out  # type: ignore[return-value]
     out = chat(role).invoke(msgs, config=_config(role, p))
     return schema.model_validate_json(str(out.content))
 
