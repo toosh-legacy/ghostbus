@@ -45,6 +45,8 @@ SUGGESTIONS = [
 ]
 FUTURE_RE = re.compile(r"\b(next (month|week|year|quarter)|predict\w*|forecast\w*|will be|going to|tomorrow|"
                        r"upcoming|future)\b", re.I)
+NOT_IN_DATA_RE = re.compile(r"(red|orange|blue|green|mattapan) line|subway|commuter rail|ferry|"
+                            r"ridership|passengers?|fares?|weather", re.I)
 METHOD_RE = re.compile(r"\b(how (is|are|do you|does ghostbus)|what counts|what is an? |what does .* mean|defin\w*|"
                        r"measur\w*|calculat\w*|where does the data|data sources?|licen[cs]e|threshold|methodology|"
                        r"privacy|what happens when|why is .* unknown)\b", re.I)
@@ -161,11 +163,18 @@ def contextualize(s: State) -> dict:
 def classify(s: State) -> dict:
     with _span("classify"):
         q = s["standalone"]
-        if FUTURE_RE.search(q):  # deterministic: models misjudge which months are "future"
+        # deterministic guards first: models misjudge which months are "future" and invent route mappings
+        if FUTURE_RE.search(q):
             return {"kind": "out_of_scope", "reason": "the data is historical; it does not contain forecasts"}
+        if NOT_IN_DATA_RE.search(q):
+            return {"kind": "out_of_scope", "reason": "the data covers MBTA bus reliability only (no subway, rail, "
+                                                      "ridership, fares or weather)"}
         ms = months()
         c = llm.structured("classify", "classify", Classification, inputs={"question": q},
                            question=q, first_month=ms[0], last_month=ms[-1])
+        if c.kind == "out_of_scope" and _intent(q).reason is None:
+            # the question fits a supported template exactly (metric, routes, months in range): not out of scope
+            return {"kind": "data", "reason": "matches a supported reliability question (classifier overridden)"}
         return {"kind": c.kind, "reason": c.reason}
 
 

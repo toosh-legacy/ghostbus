@@ -114,6 +114,22 @@ FEATURES_B = ["route_code", "direction_id", "hour", "dow", "holiday", "route_rat
               "hour_rate_28d", "trips_that_day"]
 
 
+def rolling_rate(df: pd.DataFrame, keys: list[str], days: int, name: str) -> pd.DataFrame:
+    """Missed-trip rate over the `days` calendar days strictly before each service date, per group (cutoff 4:00 AM:
+    the service date itself is excluded). Polars time-based rolling window, closed='left'."""
+    import polars as pl
+
+    pdf = pl.from_pandas(df[keys + ["service_date", "m", "n"]]).with_columns(
+        pl.col("service_date").cast(pl.Datetime("us"))).sort(keys + ["service_date"])
+    out = (pdf.rolling(index_column="service_date", period=f"{days}d", closed="left", group_by=keys)
+           .agg(pl.col("m").sum().alias("_m"), pl.col("n").sum().alias("_n"))
+           .with_columns(pl.when(pl.col("_n") > 0).then(pl.col("_m") / pl.col("_n")).otherwise(None).alias(name))
+           .select(keys + ["service_date", name]))
+    res = out.to_pandas()
+    res["service_date"] = pd.to_datetime(res["service_date"]).astype(df["service_date"].dtype)
+    return res
+
+
 def build_model_b_frame() -> pd.DataFrame:
     s = get_settings()
     lab = pd.read_parquet(s.lake_dir / "curated" / "metrics" / "trip_labels.parquet")
@@ -125,18 +141,6 @@ def build_model_b_frame() -> pd.DataFrame:
     lab["y"] = lab["missed"].astype(int)
     daily = lab.groupby(["route_id", "service_date"]).agg(m=("y", "sum"), n=("y", "size")).reset_index()
     band = lab.groupby(["route_id", "time_band", "service_date"]).agg(m=("y", "sum"), n=("y", "size")).reset_index()
-
-    def rolling_rate(df: pd.DataFrame, keys: list[str], days: int, name: str) -> pd.DataFrame:
-        # rate over the `days` service dates strictly before each date (cutoff: 4:00 AM on the service date)
-        rows = []
-        for k, g in df.groupby(keys):
-            g = g.set_index("service_date").sort_index()
-            full = g[["m", "n"]].asfreq("D", fill_value=0)
-            r = full.rolling(f"{days}D", closed="left").sum()
-            rate = (r["m"] / r["n"]).where(r["n"] > 0)
-            kk = k if isinstance(k, tuple) else (k,)
-            rows.append(pd.DataFrame({**{c: v for c, v in zip(keys, kk)}, "service_date": rate.index, name: rate.values}))
-        return pd.concat(rows, ignore_index=True)
 
     r7 = rolling_rate(daily, ["route_id"], 7, "route_rate_7d")
     r28 = rolling_rate(daily, ["route_id"], 28, "route_rate_28d")

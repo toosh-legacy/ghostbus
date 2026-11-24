@@ -52,3 +52,6 @@
 
 ## Copilot on LangChain/LangGraph + MCP
 - LangGraph copilot graph (structured outputs, retries, SqliteSaver memory), MCP server + langchain-mcp-adapters, methodology RAG with hybrid retrieval and bge/LLM reranking + ablation, LangGraph daily brief (Send map-reduce), versioned prompts with eval lock, cost guard ($3/session), call log, OpenTelemetry spans, optional LangSmith, background jobs + SSE (sse-starlette), eval-live with LLM judge.
+
+## ML + platform stack
+- LightGBM quantile + Optuna + MAPIE CQR (Model A 94.0 s MAE, 79.4% coverage); LightGBM Model B; MLflow tracking + registry with champion alias; Evidently drift; Polars features; APScheduler recorder and pipeline timers; Locust SSE load test.

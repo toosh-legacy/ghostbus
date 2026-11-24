@@ -1,19 +1,26 @@
-"""`make train` / `make backtest`: Model A (quantile GB + CQR) and Model B (calibrated classifier).
+"""`make train` / `make backtest`: Model A (LightGBM quantile regression + MAPIE CQR) and Model B (LightGBM or
+logistic regression, isotonic-calibrated).
 
-Rolling-origin backtest with 3 folds (train on earlier weeks, calibrate on the next week, test on the next 2).
-Fixed seeds. Writes ml/reports/latest.md, latest.json and backtest_results.parquet; saves + pins models.
+Optuna tunes LightGBM on the first fold's train/calibration split (time-ordered, no test data). Rolling-origin
+backtest with 3 folds (train on earlier weeks, calibrate on the next week, test on the next 2). Fixed seeds. Every
+run is tracked in MLflow (params, per-fold metrics, model cards) and each version is registered in the MLflow model
+registry; the champion alias moves only if the primary metric does not regress by more than 1%.
+Writes ml/reports/latest.md, latest.json and backtest_results.parquet.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 
+import lightgbm as lgb
 import numpy as np
+import optuna
 import pandas as pd
 from gbcore.settings import REPO_ROOT
-from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
+from mapie.regression import ConformalizedQuantileRegressor
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
@@ -37,6 +44,14 @@ REPORTS = REPO_ROOT / "ml" / "reports"
 QUANTILES = (0.1, 0.5, 0.9)
 ALPHA = 0.2
 MAX_TRAIN_ROWS_A = 400_000
+TUNE_ROWS = 120_000
+N_TRIALS = int(os.environ.get("GB_OPTUNA_TRIALS", "20"))
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+BASE_A = {"num_leaves": 63, "learning_rate": 0.08, "min_child_samples": 50, "n_estimators": 300,
+          "colsample_bytree": 0.9, "reg_lambda": 1.0}
+BASE_B = {"num_leaves": 31, "learning_rate": 0.05, "min_child_samples": 200, "n_estimators": 250,
+          "colsample_bytree": 0.9, "reg_lambda": 5.0}
+TUNING: dict = {}
 
 
 def pinball(y, q, tau):
@@ -50,16 +65,67 @@ def band_of(hour: pd.Series) -> pd.Series:
     return hour.map(time_band)
 
 
-def fit_quantiles(Xtr: pd.DataFrame, ytr: np.ndarray) -> dict:
-    cat_mask = [c in CATEGORICAL_A for c in FEATURES_A]
+def _cat_idx() -> list[int]:
+    return [i for i, c in enumerate(FEATURES_A) if c in CATEGORICAL_A]
+
+
+def lgb_quantile(q: float, params: dict) -> lgb.LGBMRegressor:
+    return lgb.LGBMRegressor(objective="quantile", alpha=q, random_state=SEED, verbose=-1, n_jobs=4, **params)
+
+
+def fit_quantiles(Xtr: pd.DataFrame, ytr: np.ndarray, params: dict | None = None) -> dict:
+    X = Xtr[FEATURES_A].to_numpy(dtype=float)
     out = {}
     for q in QUANTILES:
-        m = HistGradientBoostingRegressor(loss="quantile", quantile=q, max_iter=250, learning_rate=0.08,
-                                          max_leaf_nodes=63, min_samples_leaf=50, categorical_features=cat_mask,
-                                          random_state=SEED)
-        m.fit(Xtr[FEATURES_A], ytr)
+        m = lgb_quantile(q, params or BASE_A)
+        m.fit(X, ytr, categorical_feature=_cat_idx())
         out[q] = m
     return out
+
+
+def tune_model_a(tr: pd.DataFrame, ca: pd.DataFrame, log=print) -> dict:
+    """Optuna (TPE, seeded) on the p50 pinball loss of the calibration week; fold-0 data only."""
+    trs = tr.sample(min(len(tr), TUNE_ROWS), random_state=SEED)
+    Xt, yt = trs[FEATURES_A].to_numpy(dtype=float), trs["y"].to_numpy()
+    Xc, yc = ca[FEATURES_A].to_numpy(dtype=float), ca["y"].to_numpy()
+
+    def objective(trial: optuna.Trial) -> float:
+        params = {"num_leaves": trial.suggest_int("num_leaves", 15, 255, log=True),
+                  "learning_rate": trial.suggest_float("learning_rate", 0.02, 0.2, log=True),
+                  "min_child_samples": trial.suggest_int("min_child_samples", 20, 400, log=True),
+                  "n_estimators": trial.suggest_int("n_estimators", 100, 600, step=50),
+                  "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                  "reg_lambda": trial.suggest_float("reg_lambda", 1e-3, 20, log=True)}
+        m = lgb_quantile(0.5, params).fit(Xt, yt, categorical_feature=_cat_idx())
+        return pinball(yc, m.predict(Xc), 0.5)
+
+    study = optuna.create_study(direction="minimize", sampler=optuna.samplers.TPESampler(seed=SEED))
+    study.enqueue_trial(BASE_A)
+    study.optimize(objective, n_trials=N_TRIALS)
+    log(f"[model A] optuna best p50 pinball {study.best_value:.2f} after {len(study.trials)} trials: {study.best_params}")
+    return {**study.best_params, "_best_value": study.best_value, "_n_trials": len(study.trials)}
+
+
+def tune_model_b(Xt: pd.DataFrame, yt: np.ndarray, Xc: pd.DataFrame, yc: np.ndarray, log=print) -> dict:
+    """Optuna on calibration-week log loss for the LightGBM missed-trip classifier (fold-0 data only)."""
+    from sklearn.metrics import log_loss
+
+    def objective(trial: optuna.Trial) -> float:
+        params = {"num_leaves": trial.suggest_int("num_leaves", 7, 63, log=True),
+                  "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.15, log=True),
+                  "min_child_samples": trial.suggest_int("min_child_samples", 50, 2000, log=True),
+                  "n_estimators": trial.suggest_int("n_estimators", 100, 600, step=50),
+                  "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                  "reg_lambda": trial.suggest_float("reg_lambda", 1e-2, 50, log=True)}
+        m = lgb.LGBMClassifier(objective="binary", random_state=SEED, verbose=-1, n_jobs=4, **params)
+        m.fit(Xt, yt, categorical_feature=[0])
+        return log_loss(yc, m.predict_proba(Xc)[:, 1], labels=[0, 1])
+
+    study = optuna.create_study(direction="minimize", sampler=optuna.samplers.TPESampler(seed=SEED))
+    study.enqueue_trial(BASE_B)
+    study.optimize(objective, n_trials=N_TRIALS)
+    log(f"[model B] optuna best log loss {study.best_value:.5f} after {len(study.trials)} trials: {study.best_params}")
+    return {**study.best_params, "_best_value": study.best_value, "_n_trials": len(study.trials)}
 
 
 def cqr_qhat(y: np.ndarray, lo: np.ndarray, hi: np.ndarray, alpha: float = ALPHA) -> float:
@@ -85,20 +151,28 @@ def train_model_a(samples: pd.DataFrame | None = None, log=print) -> tuple[dict,
     rows: list[dict] = []
     fold_summ = []
     model = None
+    params: dict | None = None
     for fold in folds:
         tr, ca, te = split(df, fold)
         tr, ca, te = add_hist_median(tr, ca, te)
         tr, cats = encode_categories(tr)
         ca, _ = encode_categories(ca, cats)
         te, _ = encode_categories(te, cats)
+        if params is None:
+            tuned = tune_model_a(tr, ca, log)
+            params = {k: v for k, v in tuned.items() if not k.startswith("_")}
+            TUNING["model_a"] = tuned
         trs = tr.sample(min(len(tr), MAX_TRAIN_ROWS_A), random_state=SEED)
         trs = _blank_some(trs, rng)
         t0 = time.time()
-        models = fit_quantiles(trs, trs["y"].to_numpy())
-        cal_lo = np.minimum(models[0.1].predict(ca[FEATURES_A]), models[0.5].predict(ca[FEATURES_A]))
-        cal_hi = np.maximum(models[0.9].predict(ca[FEATURES_A]), models[0.5].predict(ca[FEATURES_A]))
+        models = fit_quantiles(trs, trs["y"].to_numpy(), params)
+        Xc = ca[FEATURES_A].to_numpy(dtype=float)
+        mapie = ConformalizedQuantileRegressor([models[0.1], models[0.9], models[0.5]], confidence_level=1 - ALPHA,
+                                               prefit=True).conformalize(Xc, ca["y"].to_numpy())
+        cal_lo = np.minimum(models[0.1].predict(Xc), models[0.5].predict(Xc))
+        cal_hi = np.maximum(models[0.9].predict(Xc), models[0.5].predict(Xc))
         qhat = cqr_qhat(ca["y"].to_numpy(), cal_lo, cal_hi)
-        model = QuantileModelA(models, qhat, cats)
+        model = QuantileModelA(models, qhat, cats, mapie=mapie)
         pred = model.predict(te)
         y = te["y"].to_numpy()
         base = {"schedule": np.zeros(len(te)), "propagation": te["delay_k"].to_numpy(dtype=float),
@@ -137,6 +211,7 @@ def train_model_a(samples: pd.DataFrame | None = None, log=print) -> tuple[dict,
     summ["best_baseline"] = best_base
     summ["improvement_vs_best_baseline_pct"] = 100 * (1 - summ["p50_mae"] / summ[f"{best_base}_mae"])
     summ["folds"] = fold_summ
+    summ["params"] = params
     # hist medians of the last fold's training slice are used for serving
     tr_last, _, _ = split(df, folds[-1])
     model.ref_delay_sample = tr_last["delay_k"].sample(min(20000, len(tr_last)), random_state=SEED).to_numpy()  # PSI reference
@@ -183,12 +258,15 @@ def train_model_b(frame: pd.DataFrame | None = None, log=print) -> tuple[dict, C
         lr_proto.model = lr
         lr_proto.iso = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(lr_proto.raw(ca), ca["y"])
         cands["logreg_isotonic"] = lr_proto
-        gb = HistGradientBoostingClassifier(max_iter=200, learning_rate=0.06, max_leaf_nodes=31, class_weight="balanced",
-                                            categorical_features=[0], random_state=SEED)
-        gb.fit(lr_proto._X(tr), tr["y"])
-        gbm = CalibratedClassifierB("hgb", gb, None, cats, fill)  # type: ignore[arg-type]
+        if "model_b" not in TUNING:
+            TUNING["model_b"] = tune_model_b(lr_proto._X(tr), tr["y"].to_numpy(), lr_proto._X(ca), ca["y"].to_numpy(),
+                                             log)
+        pb = {k: v for k, v in TUNING["model_b"].items() if not k.startswith("_")}
+        gb = lgb.LGBMClassifier(objective="binary", random_state=SEED, verbose=-1, n_jobs=4, **pb)
+        gb.fit(lr_proto._X(tr), tr["y"], categorical_feature=[0])
+        gbm = CalibratedClassifierB("lgbm", gb, None, cats, fill)  # type: ignore[arg-type]
         gbm.iso = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(gbm.raw(ca), ca["y"])
-        cands["hgb_isotonic"] = gbm
+        cands["lgbm_isotonic"] = gbm
         y = te["y"].to_numpy()
         preds = {"overall_rate": np.full(len(te), overall),
                  "rolling_28d_route_hour": te["hour_rate_28d"].fillna(overall).to_numpy()}
@@ -207,10 +285,10 @@ def train_model_b(frame: pd.DataFrame | None = None, log=print) -> tuple[dict, C
                                                              for k, r in res.items()}))
         best_model = cands
     # choose by mean Brier across folds
-    meth = ["overall_rate", "rolling_28d_route_hour", "logreg_isotonic", "hgb_isotonic"]
+    meth = ["overall_rate", "rolling_28d_route_hour", "logreg_isotonic", "lgbm_isotonic"]
     mean = {m: {k: float(np.mean([f["results"][m][k] for f in fold_summ])) for k in ("brier", "roc_auc", "pr_auc", "ece")}
             for m in meth}
-    chosen = min(("logreg_isotonic", "hgb_isotonic"), key=lambda m: mean[m]["brier"])
+    chosen = min(("logreg_isotonic", "lgbm_isotonic"), key=lambda m: mean[m]["brier"])
     model = best_model[chosen]
     # calibration curve on last fold
     _, _, te = split(df, folds[-1])
@@ -237,8 +315,9 @@ def card_a(summ: dict, version: str) -> str:
 
 - Task: at the moment a bus is observed at timepoint k, predict its delay at later timepoint j (1–5 timepoints ahead).
 - Data: MBTA Bus Arrival Departure Times 2025 (CC0), Jul–Dec 2025, 10 pilot routes; ~12% of trips sampled.
-- Model: scikit-learn HistGradientBoostingRegressor, quantile loss at 0.1/0.5/0.9; conformalized quantile regression
-  on the week before each test window (target 80% coverage).
+- Model: LightGBM quantile regression at 0.1/0.5/0.9 (hyperparameters tuned with Optuna on fold-0 train/calibration
+  data: {summ.get('params')}); MAPIE conformalized quantile regression on the week before each test window (target
+  80% coverage).
 - Features (known at prediction time only): {', '.join(FEATURES_A)}.
 - Leakage guard: recent-segment feature is an ASOF join on segments completed strictly before the prediction time;
   historical medians are fit on the training slice only (tests in tests/test_ml.py).
@@ -257,8 +336,8 @@ def card_b(summ: dict, version: str) -> str:
 - Task: probability that a scheduled pilot-route trip is missed (ghost-def v1.1 historical definition), using only
   information available by 4:00 AM on the service date.
 - Labels: D2 half-trips with no observed timepoint events; route-days below 70% completeness excluded (unknown).
-- Candidates: logistic regression (one-hot, class weights) and HistGradientBoostingClassifier (class weights), each
-  with isotonic calibration on the week before the test window. Chosen: {summ['chosen']}.
+- Candidates: logistic regression (one-hot, class weights) and LightGBM (Optuna-tuned on fold-0 calibration log
+  loss), each with isotonic calibration on the week before the test window. Chosen: {summ['chosen']}.
 - Backtest mean over 3 folds: Brier {m[summ['chosen']]['brier']:.5f} vs rolling 28-day baseline
   {m['rolling_28d_route_hour']['brier']:.5f}; ROC-AUC {m[summ['chosen']]['roc_auc']:.3f}; PR-AUC {m[summ['chosen']]['pr_auc']:.3f}
   (base rate ≈ {np.mean([f['base_rate_test'] for f in summ['folds']]):.3f}); ECE {m[summ['chosen']]['ece']:.4f}.
@@ -305,10 +384,24 @@ def main(argv: list[str] | None = None) -> int:
         print((REPORTS / "latest.md").read_text(encoding="utf-8"))
         return 0
     t0 = time.time()
+    from datetime import UTC, datetime
+
+    from .registry import setup_mlflow
+
+    mlflow = setup_mlflow("ghostbus-training")
     reg = ModelRegistry()
+    mlflow.start_run(run_name=datetime.now(UTC).strftime("train-%Y%m%d-%H%M%S"))
+    mlflow.log_params({"seed": SEED, "folds": 3, "alpha": ALPHA, "max_train_rows_a": MAX_TRAIN_ROWS_A,
+                       "optuna_trials": N_TRIALS})
     sa, ma, rows_a = train_model_a()
     sb, mb, rows_b = train_model_b()
-    from datetime import UTC, datetime
+    for f in sa["folds"]:
+        mlflow.log_metrics({f"a_fold{f['fold']}_p50_mae": f["p50_mae"], f"a_fold{f['fold']}_coverage": f["coverage"],
+                            f"a_fold{f['fold']}_width_s": f["width_s"]})
+    for f in sb["folds"]:
+        mlflow.log_metrics({f"b_fold{f['fold']}_brier_{k}": v["brier"] for k, v in f["results"].items()})
+    mlflow.log_params({f"a_{k}": v for k, v in (sa.get("params") or {}).items()})
+    mlflow.log_params({f"b_{k}": v for k, v in TUNING.get("model_b", {}).items() if not k.startswith("_")})
 
     ver = datetime.now(UTC).strftime("v%Y%m%d-%H%M%S")
     ma.version, mb.version = f"model_a-{ver}", f"model_b-{ver}"
@@ -326,6 +419,10 @@ def main(argv: list[str] | None = None) -> int:
         promo[name] = f"{'pinned' if ok else 'NOT pinned'} {ver}: {why}"
     pd.DataFrame(rows_a + rows_b).to_parquet(REPORTS / "backtest_results.parquet", index=False)
     write_report(sa, sb, promo)
+    mlflow.log_metrics({"a_p50_mae": sa["p50_mae"], "a_coverage": sa["coverage"], "b_brier": sb["brier"]})
+    mlflow.log_artifact(str(REPORTS / "latest.md"))
+    mlflow.set_tags(promo)
+    mlflow.end_run()
     print(f"done in {time.time() - t0:.0f}s", promo)
     return 0
 

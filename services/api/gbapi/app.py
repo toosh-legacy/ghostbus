@@ -558,18 +558,23 @@ def create_app(pipeline_mode: str | None = None, speed: float | None = None, sce
         except Exception as e:  # noqa: BLE001
             live_cov = {"error": str(e)}
         drift = None
-        try:
-            from gbml.online import PSI_WARN, psi
+        try:  # Evidently PSI: live serving features vs the training reference sample
+            from gbml.drift import PSI_WARN
+            from gbml.drift import drift as evidently_drift
 
             live = [f["features"].get("delay_k") for f in c.prediction_log if f["features"].get("delay_k") is not None]
             ref = getattr(getattr(c.model_a, "m", None), "ref_delay_sample", None)
-            if live and ref is not None:
-                v = psi(np.asarray(ref), np.asarray(live))
-                drift = {"feature": "current delay", "psi": v, "warn": bool(v > PSI_WARN), "n_live": len(live)}
+            if len(live) >= 50 and ref is not None:
+                r = evidently_drift(pd.DataFrame({"delay_k": ref}), pd.DataFrame({"delay_k": live}), ["delay_k"])
+                v = r["psi"].get("delay_k")
+                drift = {"feature": "current delay", "psi": v, "warn": bool(v is not None and v >= PSI_WARN),
+                         "n_live": len(live), "method": "evidently psi"}
             else:
-                drift = {"note": "not enough live model predictions yet", "n_live": len(live)}
+                drift = {"note": "not enough live model predictions yet (need 50)", "n_live": len(live)}
         except Exception as e:  # noqa: BLE001
             drift = {"error": str(e)}
+        offline = REPO_ROOT / "ml" / "reports" / "drift.json"
+        drift = {"live": drift, "offline": json.loads(offline.read_text()) if offline.exists() else None}
         return envelope(c, {"drift": drift, "model_a": getattr(c.model_a, "version", None), "model_b": getattr(c.model_b, "version", None),
                             "backtest": json.loads(bt.read_text()) if bt.exists() else None,
                             "live": live_cov, "predictions_logged": len(c.prediction_log)})

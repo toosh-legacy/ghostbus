@@ -1,0 +1,20 @@
+{
+  "qhat_s": 9.922108903077174,
+  "fit_s": 74.33333333333333,
+  "p50_mae": 94.00235154727348,
+  "p50_rmse": 152.52248926200858,
+  "coverage_raw": 0.7466005363600331,
+  "coverage": 0.7939329341388044,
+  "width_s": 291.7326752727593,
+  "pinball_p10": 19.169879192885464,
+  "pinball_p50": 47.00117577363674,
+  "pinball_p90": 25.40440834384177,
+  "schedule_mae": 271.9608244047425,
+  "schedule_rmse": 392.8813883852933,
+  "propagation_mae": 139.88733098009791,
+  "propagation_rmse": 218.69931582005063,
+  "historical_median_mae": 254.61832534022537,
+  "historical_median_rmse": 360.6781208155673,
+  "best_baseline": "propagation",
+  "improvement_vs_best_baseline_pct": 32.80138316410698
+}

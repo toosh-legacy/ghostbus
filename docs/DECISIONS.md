@@ -86,3 +86,20 @@ failures. Known flaky item: "bunching rate of route 39 in the evening in Decembe
 - Methodology RAG: BM25 + dense (RRF) then a reranker; bge-reranker-base on CPU is the default when the `rerank` extra is
   installed (offline ablation: recall@3 0.812 → 0.938), else the cheap LLM reranker when a key is set.
 - pandas pinned < 3: Evidently 0.7.23 (latest) does not import with pandas 3.
+
+## ML stack: LightGBM + Optuna + MAPIE + MLflow + Evidently; Polars; APScheduler; Locust (2026-11-24)
+- Model A: LightGBM quantile regression (p10/p50/p90), Optuna (20 seeded TPE trials) on fold-0 train/calibration
+  only; MAPIE ConformalizedQuantileRegressor (prefit, symmetric) for 80% intervals. p50 MAE 94.0 s vs 139.9 s
+  propagation baseline (32.8% better); coverage 79.4%.
+- Model B: LightGBM (Optuna on calibration log loss) vs logistic regression, isotonic-calibrated. Brier 0.01758 beats
+  the rolling 28-day baseline (0.01767) but only ties the overall-rate baseline (0.01757): missed trips are close to
+  unpredictable at the 4 AM cutoff with these features. Kept as a calibrated prior; not claimed as a strong model.
+- MLflow: local sqlite tracking store (var/mlflow), every training run logged; versions registered as
+  `ghostbus-model_a/_b` with a `champion` alias moved only by the 1% promotion rule. Tests use a throwaway store and
+  registries rooted outside ml/artifacts never touch MLflow (a test once moved the real alias; repaired).
+- Evidently PSI drift (offline report + admin live check); Polars time-window rolling rates for Model B features
+  (parity-tested against the pandas definition); APScheduler drives the recorder feed jobs and the live pipeline's
+  tail poll + ghost staleness timer (processing stays on event time); Locust replaces the hand-rolled SSE load test.
+- Live eval (gpt-4o-mini / gpt-4o): judge prompt v2 accepts the answer formatting conventions; subway/rail/ridership
+  questions refused by a code guard; a classifier refusal of a question that fits a supported template is overridden.
+  The cheap-LLM reranker beat bge-reranker-base live (recall@3 0.969 vs 0.938), so it is the default with a key.

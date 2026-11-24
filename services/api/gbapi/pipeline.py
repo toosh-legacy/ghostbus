@@ -5,6 +5,11 @@ Modes (env PIPELINE):
 - replay : replay all recorded snapshots at REPLAY_SPEED, then keep tailing
 - sim    : run a simulator scenario at REPLAY_SPEED (looping)
 - off    : no background processing (tests inject events directly)
+
+Tailing runs on an APScheduler AsyncIOScheduler: `tail_poll` (every 5 s) picks up new raw snapshots, and the
+`ghost_staleness` timer (every 30 s) applies the ghost-rule feed check: when no snapshot has arrived for 2 minutes
+it broadcasts a feed-health event so every open map shows ghost states as Unknown, and again when the feed recovers.
+Processing itself stays on event time; the timers only drive polling and the staleness signal.
 """
 
 from __future__ import annotations
@@ -14,6 +19,7 @@ import gzip
 import logging
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 from gbcore.interfaces import Broadcaster, MemoryLiveState
 from gbcore.settings import get_settings
@@ -22,6 +28,8 @@ from gbstream.network import Network
 from gbstream.processor import Processor
 from gbstream.replay import batches_from_events, iter_lake_events, list_snapshots
 from gbstream.writers import CuratedWriter
+
+STALE_AFTER_S = 120
 
 log = logging.getLogger("gbapi.pipeline")
 
@@ -54,6 +62,8 @@ class LivePipeline:
         self.prediction_log: list[dict] | None = None  # set by the API (shared with the stop page)
         self.db_sink = None
         self._last_db_flush = float("-inf")
+        self.scheduler = None
+        self.feed_stale = False
         self.db_flush_every_s = 60.0
         if persist:
             from gbstream.dbsink import DbSink
@@ -72,6 +82,9 @@ class LivePipeline:
             self._task = asyncio.create_task(self._run())
 
     async def stop(self) -> None:
+        if self.scheduler is not None:
+            self.scheduler.shutdown(wait=False)
+            self.scheduler = None
         if self._task:
             self._task.cancel()
             try:
@@ -126,21 +139,44 @@ class LivePipeline:
         raw = get_settings().lake_dir / "raw"
         await self._paced(iter_lake_events(raw, route_filter=self.routes))
 
-    async def _tail(self) -> None:
+    def _poll_lake(self) -> int:
         raw = get_settings().lake_dir / "raw"
-        while True:
-            snaps = list_snapshots(raw, start=(self._last_ts + 1e-6) if self._last_ts else None)
-            if self._last_ts is None and snaps:
-                snaps = snaps[-6:]  # start from the latest couple of minutes
-            for ts, feed, p in snaps:
-                try:
-                    batch = decode(feed, gzip.decompress(p.read_bytes()), ts, "live", self.routes)
-                except Exception:  # noqa: BLE001
-                    continue
-                self.feed(batch)
-                self._last_ts = ts
-                await asyncio.sleep(0)
-            await asyncio.sleep(5)
+        snaps = list_snapshots(raw, start=(self._last_ts + 1e-6) if self._last_ts else None)
+        if self._last_ts is None and snaps:
+            snaps = snaps[-6:]  # start from the latest couple of minutes
+        n = 0
+        for ts, feed, p in snaps:
+            try:
+                batch = decode(feed, gzip.decompress(p.read_bytes()), ts, "live", self.routes)
+            except Exception:  # noqa: BLE001
+                continue
+            self.feed(batch)
+            self._last_ts = ts
+            n += 1
+        return n
+
+    def _ghost_staleness(self) -> None:
+        last = self.status.last_wall_update
+        stale = last is None or (time.time() - last) > STALE_AFTER_S
+        if stale != self.feed_stale:
+            self.feed_stale = stale
+            self.bc.publish({"type": "feed_health", "route_id": None, "stale": stale,
+                             "ghost_state_override": "unknown" if stale else None,
+                             "reason": "no feed snapshot for 2 minutes" if stale else "feed recovered"})
+
+    def start_scheduler(self) -> None:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        self.scheduler = AsyncIOScheduler(timezone="UTC")
+        self.scheduler.add_job(self._poll_lake, "interval", seconds=5, id="tail_poll", max_instances=1,
+                               coalesce=True, next_run_time=datetime.now(UTC))
+        self.scheduler.add_job(self._ghost_staleness, "interval", seconds=30, id="ghost_staleness",
+                               max_instances=1, coalesce=True)
+        self.scheduler.start()
+
+    async def _tail(self) -> None:
+        self.start_scheduler()
+        await asyncio.Event().wait()  # jobs run on the scheduler; this task just keeps the pipeline alive
 
     async def _sim(self) -> None:
         from gbsim.evaluate import DEFAULT_DATE

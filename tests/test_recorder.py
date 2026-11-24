@@ -71,3 +71,31 @@ def test_fetch_error_backs_off_and_survives(tmp_path):
     assert fs.errors == 2 and fs.consecutive_errors == 2
     lines = [json.loads(x) for x in (tmp_path / "raw" / "manifest.jsonl").read_text().splitlines()]
     assert lines[-1]["backoff_s"] == 40
+
+
+def test_scheduled_recorder_polls_politely(tmp_path):
+    """APScheduler loop: feeds fetched once per interval (never faster than 15 s), heartbeat written."""
+    import threading
+    import time as _t
+
+    import httpx
+    from gbstream.recorder import Recorder
+
+    calls = []
+
+    def handler(req):
+        calls.append((_t.monotonic(), str(req.url)))
+        return httpx.Response(200, content=b"\x0a\x00")
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    rec = Recorder(tmp_path / "raw", tmp_path / "var", 15.0, "GhostBus-test/0.1")
+    th = threading.Thread(target=rec.run_scheduled, kwargs={"client": client}, daemon=True)
+    th.start()
+    _t.sleep(4)
+    rec.stop()
+    th.join(timeout=10)
+    per_feed: dict = {}
+    for _, url in calls:
+        per_feed[url] = per_feed.get(url, 0) + 1
+    assert per_feed and all(n == 1 for n in per_feed.values())  # one fetch each inside 4 s
+    assert (tmp_path / "var" / "recorder_heartbeat.json").exists()

@@ -1,0 +1,105 @@
+[project]
+name = "ghostbus"
+version = "0.1.0"
+description = "Real-time bus reliability platform: ghost-bus detection, calibrated arrival ranges, reliability scores from MBTA open data."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "sqlalchemy>=2.0",
+  "alembic>=1.13",
+  "shapely>=2.0",
+  "pyproj>=3.6",
+  "pandas>=2.2,<3",
+  "pyarrow>=16",
+  "duckdb>=1.0",
+  "gtfs-realtime-bindings>=1.0",
+  "protobuf>=4.25",
+  "httpx>=0.27",
+  "scikit-learn>=1.5",
+  "joblib>=1.4",
+  "sqlglot>=25",
+  "pyyaml>=6",
+  "numpy>=1.26",
+  "redis>=5",
+  "psycopg[binary]>=3.1",
+  "openai>=3.58.0",
+  "langchain>=1",
+  "langchain-openai>=1",
+  "langgraph>=1",
+  "langgraph-checkpoint-sqlite>=3.1.3",
+  "langsmith>=0.16.1",
+  "sse-starlette>=3.7.1",
+  "polars>=2.1.0",
+  "apscheduler>=3.11.3",
+  "lightgbm>=4.7.0",
+  "mapie>=1.6.0",
+  "mlflow>=3.18.0",
+  "optuna>=5.1.0",
+  "evidently>=0.7.23",
+  "opentelemetry-sdk>=1.45.2",
+  "opentelemetry-api>=1.45.2",
+  "mcp>=1",
+  "langchain-mcp-adapters>=0.3.2",
+  "rank-bm25>=0.2.2",
+]
+
+[project.optional-dependencies]
+rerank = [
+    "sentence-transformers>=6.3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "hypothesis>=6",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pandas-stubs",
+    "types-PyYAML",
+    "locust>=2.47.0",
+    "pre-commit>=4.7.0",
+    "pytest-asyncio>=1.5.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "packages/core/gbcore",
+  "packages/agency/gbagency",
+  "packages/schemas/gbschemas",
+  "services/stream/gbstream",
+  "services/api/gbapi",
+  "data/pipeline/gbdata",
+  "sim/gbsim",
+  "ml/gbml",
+  "copilot/gbcopilot",
+  "evals/gbevals",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "full: requires Docker full-mode services (Postgres/Redis); skipped when unavailable",
+  "slow: slower integration tests",
+  "network: touches the network (skipped by default)",
+]
+addopts = "-q -m 'not network'"
+
+[tool.ruff]
+line-length = 110
+extend-exclude = ["services/api/migrations"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "B008", "B905", "E731", "B007"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true

@@ -1,6 +1,6 @@
 # Evaluation report (fast CI subset)
 
-Generated 2026-11-24T06:34:19+00:00 · 14/14 gates pass
+Generated 2026-11-24T06:52:56+00:00 · 14/14 gates pass
 
 | Suite | Metric | Value | Gate | Result |
 |---|---|---|---|---|
@@ -9,14 +9,14 @@ Generated 2026-11-24T06:34:19+00:00 · 14/14 gates pass
 | Ghost rules | min precision / recall of High | 1.000 / 1.000 | ≥ 0.9 / ≥ 0.9 | PASS |
 | Ghost rules | Unknown during outage | 100% | 100% | PASS |
 | Replay determinism | outputs 1× vs 20× (sim hour, recorded hour) | identical | identical, 0 dropped | PASS |
-| Model A | p50 MAE vs best baseline | 95.6 s vs 139.9 s (propagation) | beats baseline | PASS |
-| Model A | 80% interval coverage | 79.5% | 78–82% | PASS |
-| Model B | Brier vs rolling baseline; PR-AUC | 0.01748 vs 0.01767; PR-AUC 0.034 vs 0.023 | beats baseline | PASS |
+| Model A | p50 MAE vs best baseline | 94.0 s vs 139.9 s (propagation) | beats baseline | PASS |
+| Model A | 80% interval coverage | 79.4% | 78–82% | PASS |
+| Model B | Brier vs rolling baseline; PR-AUC | 0.01758 vs 0.01767; PR-AUC 0.025 vs 0.023 | beats baseline | PASS |
 | Copilot accuracy | 40 gold questions | 100.0% | ≥ 90% | PASS |
 | Copilot refusals | 10 unanswerable | 100% | 100% | PASS |
 | Methodology RAG | recall@3 / MRR@10 (32 questions, rerank: cross_encoder) | 0.938 / 0.858 | recall@3 ≥ 0.85 | PASS |
 | Methodology RAG | answers citing a gold passage | 84% | ≥ 80% | PASS |
-| Copilot red team | 25 prompts + 20 SQL payloads + 9 MCP tool attacks | 0 failures; DB unchanged=True; cross join timed out cleanly in 5.07 s | 0 | PASS |
+| Copilot red team | 25 prompts + 20 SQL payloads + 9 MCP tool attacks | 0 failures; DB unchanged=True; cross join timed out cleanly in 5.06 s | 0 | PASS |
 | Privacy | coordinates in logs | 0 | 0 | PASS |
 
 ## Simulator scenarios

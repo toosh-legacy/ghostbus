@@ -14,21 +14,30 @@ from .data import FEATURES_A, FEATURES_B
 
 @dataclass
 class QuantileModelA:
-    """p10/p50/p90 gradient boosting + conformal (CQR) adjustment."""
+    """LightGBM quantile regressors (p10/p50/p90) + MAPIE conformalized quantile regression (80% intervals).
+
+    `mapie` is a prefit mapie.regression.ConformalizedQuantileRegressor over [p10, p90, p50] models, conformalized
+    on the calibration week; `qhat` is its symmetric correction (seconds), kept for reports."""
 
     models: dict
     qhat: float
     cats: dict
     hist_median: dict = field(default_factory=dict)
     version: str = ""
+    mapie: object | None = None
 
     def predict(self, X: pd.DataFrame) -> pd.DataFrame:
-        X = X[FEATURES_A]
-        lo = self.models[0.1].predict(X)
-        mid = self.models[0.5].predict(X)
-        hi = self.models[0.9].predict(X)
+        Xa = X[FEATURES_A].to_numpy(dtype=float)
+        lo = self.models[0.1].predict(Xa)
+        mid = self.models[0.5].predict(Xa)
+        hi = self.models[0.9].predict(Xa)
         lo, hi = np.minimum(lo, mid), np.maximum(hi, mid)
-        return pd.DataFrame({"p10": lo - self.qhat, "p50": mid, "p90": hi + self.qhat, "raw_p10": lo, "raw_p90": hi})
+        if self.mapie is not None:
+            _, pis = self.mapie.predict_interval(Xa, symmetric_correction=True)
+            p10, p90 = np.minimum(pis[:, 0, 0], mid), np.maximum(pis[:, 1, 0], mid)
+        else:
+            p10, p90 = lo - self.qhat, hi + self.qhat
+        return pd.DataFrame({"p10": p10, "p50": mid, "p90": p90, "raw_p10": lo, "raw_p90": hi})
 
 
 @dataclass

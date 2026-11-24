@@ -1,0 +1,21 @@
+{
+  "method": "psi",
+  "threshold": 0.2,
+  "psi": {
+    "delay_k": 0.08612632496938243,
+    "delay_chg": 0.03867455637201845,
+    "horizon": 3.247998931987086e-05,
+    "sched_travel_s": 0.0012977260404218377,
+    "hour": 0.005681286094751543,
+    "dow": 0.0021809890862638805,
+    "recent_seg_delta": 0.09626408375566287,
+    "headway_k": 0.000962386941306833
+  },
+  "drifted_share": 0.0,
+  "drifted": [],
+  "n_reference": 200000,
+  "n_current": 118193,
+  "reference": "service days up to 2025-11-19",
+  "current": "last 14 service days to 2025-12-31",
+  "generated_utc": "2026-11-24T06:50:57.660650+00:00"
+}

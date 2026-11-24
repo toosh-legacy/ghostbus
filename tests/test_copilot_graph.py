@@ -185,10 +185,10 @@ def test_tool_failure_falls_back_to_sql(monkeypatch):
 
 @needs_db
 def test_sqlite_checkpointer_keeps_thread_memory():
+    import uuid
+
     from gbcopilot.agent import answer
     from gbcopilot.graph import graph
-
-    import uuid
 
     tid = f"test-thread-{uuid.uuid4().hex}"
     first = answer("What was the bunching rate of route 39 in the evening in December 2025?", thread_id=tid)

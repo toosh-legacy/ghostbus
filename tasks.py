@@ -119,8 +119,7 @@ TASKS = {
     "lock-prompts": lambda: run(PY + ["-m", "gbevals.run", "--fast", "--lock-prompts"]),
     "promptfoo": lambda: run(["npx", "--yes", "promptfoo@latest", "eval", "-c", "evals/promptfoo/promptfooconfig.yaml",
                               "--no-cache", "--no-progress-bar"]),
-    "load-test": lambda: run(PY + ["-m", "locust", "-f", "evals/locust/sse_locustfile.py", "--headless", "-u", "200",
-                                   "-r", "50", "-t", "60s", "--host", "http://127.0.0.1:8000", "--only-summary"]),
+    "load-test": lambda: run(PY + ["-m", "gbevals.load_locust"]),
 }
 
 

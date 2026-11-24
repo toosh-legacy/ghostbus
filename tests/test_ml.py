@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from gbcore.settings import get_settings
 from gbml.data import split, time_folds
-from gbml.online import join_predictions_to_arrivals, live_coverage, psi
+from gbml.online import join_predictions_to_arrivals, live_coverage
 from gbml.registry import ModelRegistry
 from gbml.train import cqr_qhat
 
@@ -37,11 +37,16 @@ def test_cqr_reaches_target_coverage():
     assert 0.78 <= cov <= 0.82
 
 
-def test_psi():
-    rng = np.random.default_rng(1)
+def test_evidently_psi_flags_shifted_feature():
+    import pandas as pd
+    from gbml.drift import drift
+
+    rng = np.random.default_rng(0)
     a = rng.normal(0, 1, 5000)
-    assert psi(a, rng.normal(0, 1, 5000)) < 0.05
-    assert psi(a, rng.normal(1.5, 1, 5000)) > 0.2
+    same = drift(pd.DataFrame({"delay_k": a}), pd.DataFrame({"delay_k": rng.normal(0, 1, 5000)}), ["delay_k"])
+    shifted = drift(pd.DataFrame({"delay_k": a}), pd.DataFrame({"delay_k": rng.normal(1.5, 1, 5000)}), ["delay_k"])
+    assert same["psi"]["delay_k"] < 0.05 and not same["drifted"]
+    assert shifted["psi"]["delay_k"] > 0.2 and shifted["drifted"] == ["delay_k"]
 
 
 def test_registry_promotion_rule(tmp_path):
@@ -109,3 +114,32 @@ def test_pinned_models_load_and_predict():
                                          pattern=p, stop_index=10, last_stop_index=3, now=900.0,
                                          service_date=date(2026, 11, 24))
     assert pred.p10_ts <= pred.p50_ts <= pred.p90_ts and pred.source == "model"
+
+
+def test_polars_rolling_rate_matches_pandas_reference():
+    import numpy as np
+    import pandas as pd
+    from gbml.data import rolling_rate
+
+    rng = np.random.default_rng(3)
+    dates = pd.to_datetime(pd.date_range("2025-07-01", periods=60, freq="D"))
+    rows = [{"route_id": r, "service_date": d, "m": int(rng.integers(0, 4)), "n": int(rng.integers(5, 40))}
+            for r in ("1", "23") for d in dates if rng.random() > 0.15]  # some missing days
+    df = pd.DataFrame(rows)
+
+    def reference(df, keys, days, name):  # the pandas definition: calendar-filled, closed="left"
+        out = []
+        for k, g in df.groupby(keys):
+            full = g.set_index("service_date").sort_index()[["m", "n"]].asfreq("D", fill_value=0)
+            r = full.rolling(f"{days}D", closed="left").sum()
+            rate = (r["m"] / r["n"]).where(r["n"] > 0)
+            out.append(pd.DataFrame({"route_id": k[0] if isinstance(k, tuple) else k, "service_date": rate.index,
+                                     name: rate.values}))
+        return pd.concat(out)
+
+    got = rolling_rate(df, ["route_id"], 7, "r7")
+    ref = reference(df, ["route_id"], 7, "r7")
+    m = df[["route_id", "service_date"]].merge(got, on=["route_id", "service_date"]).merge(
+        ref, on=["route_id", "service_date"], suffixes=("", "_ref"))
+    assert len(m) == len(df)
+    assert np.allclose(m["r7"].fillna(-1), m["r7_ref"].fillna(-1))

@@ -200,15 +200,21 @@ def cross_encoder_rerank(q: str, hits: list[Hit]) -> list[Hit]:
 
 
 def default_reranker() -> str:
+    """auto: the cheap-LLM reranker when a key is set (best in the ablation), else the local cross-encoder."""
     choice = os.environ.get("GB_RERANKER", "auto")
     if choice == "auto":
-        return "cross_encoder" if cross_encoder_available() else ("llm" if llm.live() else "none")
+        return "llm" if llm.live() else ("cross_encoder" if cross_encoder_available() else "none")
     return choice
 
 
 @lru_cache
-def retriever() -> Retriever:
+def _retriever(live: bool) -> Retriever:
     return Retriever()
+
+
+def retriever() -> Retriever:
+    """One index per mode: OpenAI embeddings when live, the local hashing embedding otherwise."""
+    return _retriever(llm.live())
 
 
 def retrieve(q: str, k: int = 4, reranker: str | None = None) -> list[Hit]:

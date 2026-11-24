@@ -217,10 +217,7 @@ def test_api_keys_and_rate_limit_headers(client):
 
 @pytest.mark.slow
 def test_sse_fanout_load_smoke():
-    """Small version of `python -m gbevals.load_sse --clients 500` (separate client process)."""
-    import asyncio
+    """Small version of `python -m gbevals.load_locust --users 500`: Locust riders hold /v1/stream on a sim replay."""
+    from gbevals.load_locust import main
 
-    from gbevals.load_sse import run
-
-    r = asyncio.run(run(clients=25, minutes=14, speed=40))
-    assert r["connected"] == 25 and r["all_received_everything"], r
+    assert main(["--users", "20", "--spawn-rate", "10", "--duration", "20"]) == 0

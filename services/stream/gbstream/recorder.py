@@ -96,9 +96,12 @@ class Recorder:
         self.started = datetime.now(UTC)
         self._last_hb = 0.0
         self._stop = False
+        self._scheduler = None
 
     def stop(self, *_args) -> None:
         self._stop = True
+        if self._scheduler is not None:
+            self._scheduler.shutdown(wait=False)
 
     def fetch_once(self, client: httpx.Client, fs: FeedState) -> None:
         fetch_ts = datetime.now(UTC)
@@ -193,6 +196,37 @@ class Recorder:
                 client.close()
 
 
+    def run_scheduled(self, client: httpx.Client | None = None) -> None:
+        """Production loop on an APScheduler BlockingScheduler: one job per feed that checks every 2 s and fetches
+        only when that feed is due (its own interval, never below 15 s, longer while in backoff), plus a 60 s
+        heartbeat job."""
+        from apscheduler.schedulers.blocking import BlockingScheduler
+
+        self.raw_dir.mkdir(parents=True, exist_ok=True)
+        self.var_dir.mkdir(parents=True, exist_ok=True)
+        own = client is None
+        client = client or httpx.Client(follow_redirects=True)
+        sched = BlockingScheduler(timezone="UTC")
+        self._scheduler = sched
+
+        def poll(fs: FeedState) -> None:
+            if time.monotonic() >= fs.next_due:
+                self.fetch_once(client, fs)
+
+        now = datetime.now(UTC)
+        for fs in self.feeds:
+            sched.add_job(poll, "interval", args=[fs], seconds=2, id=f"poll-{fs.name}", max_instances=1,
+                          coalesce=True, next_run_time=now)
+        sched.add_job(self.write_heartbeat, "interval", seconds=60, id="heartbeat", max_instances=1, coalesce=True)
+        self.write_heartbeat()
+        try:
+            sched.start()
+        finally:
+            self.write_heartbeat(stopped=True)
+            if own:
+                client.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="GhostBus live GTFS-RT recorder")
     p.add_argument("--max-cycles", type=int, default=None)
@@ -218,7 +252,10 @@ def main(argv: list[str] | None = None) -> int:
     signal.signal(signal.SIGTERM, rec.stop)
     (s.var_dir / "recorder.pid").write_text(str(os.getpid()))
     log.info("recorder starting interval=%ss ua=%s", rec.interval_s, rec.user_agent)
-    rec.run(args.max_cycles)
+    if args.max_cycles is not None:
+        rec.run(args.max_cycles)
+    else:
+        rec.run_scheduled()
     return 0
 
 
