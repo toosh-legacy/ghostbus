@@ -1,8 +1,9 @@
 # GhostBus
 
-Real-time bus reliability platform for MBTA buses: **ghost-bus detection**, **calibrated arrival ranges** and
-**published reliability scores** from MBTA open data. Python (FastAPI, DuckDB, scikit-learn), Next.js. Built locally
-behind interfaces; Azure deployment (Phase C) swaps adapters by configuration.
+Real-time bus reliability platform for MBTA buses: **ghost-bus detection**, **calibrated arrival ranges**, **published
+reliability scores** and a **LangGraph copilot** that answers reliability questions through an MCP tool server, with
+every query validated read-only. Python (FastAPI, DuckDB, LightGBM, LangChain/LangGraph), Next.js (Vercel AI SDK,
+MapLibre + deck.gl). Built locally behind interfaces; the Azure deployment swaps adapters by configuration.
 
 Spec: [`TRANSIT_SPEC.md`](TRANSIT_SPEC.md) · Overnight results: [`docs/MORNING_REPORT.md`](docs/MORNING_REPORT.md)
 
@@ -13,8 +14,8 @@ uv sync                       # Python 3.12 env
 make record                   # start the polite live recorder (detached; heartbeat in var/)
 make recorder-status          # check / restart it
 make data                     # D1 GTFS (+archive) + D2 arrival/departure 2025 -> Parquet lake, metrics, analytics DB
-make train                    # Model A + Model B, 3-fold backtest -> ml/reports/latest.md, pins models
-make eval                     # every gate in spec 17.2 -> evals/reports/latest.md
+make train                    # LightGBM + Optuna + MAPIE, 3-fold backtest, MLflow registry champion alias
+make eval                     # every gate -> evals/reports/latest.md  (make eval-live: real OpenAI models, $3 cap)
 make test                     # pytest (unit, property-based, integration, API, data)
 make demo                     # API :8000 (replay of recorded data) + web :3100
 cd apps/web && npm run test:e2e   # Playwright + axe happy path (needs `make demo` running)
@@ -26,21 +27,23 @@ then `MODE=full STREAM_BUS=redis LIVE_STATE=redis DATABASE_URL=postgresql+psycop
 
 | Path | What |
 |---|---|
-| `services/stream/gbstream` | recorder, decoder, dedupe + watermark ordering, STRtree map matching, arrival detection, ghost rules (ghost-def v1.1), replay engine, curated writers |
+| `services/stream/gbstream` | APScheduler recorder, GTFS-RT decoder, dedupe + watermark ordering, STRtree map matching, arrival detection, ghost rules (ghost-def v1.1), replay engine |
 | `sim/gbsim` | simulator with exact ground truth (6 seeded scenarios) and scorer |
-| `data/pipeline/gbdata` | GTFS current + archive, calendar expansion, stop-on-shape, D2 pipeline, completeness, reliability metrics, analytics DB, DB seeding |
-| `ml/gbml` | Model A (quantile GB + conformal), Model B (calibrated classifier), registry with promotion rule, serving, online coverage + PSI |
-| `copilot/gbcopilot` | sqlglot SQL validator, read-only query tool, offline intent-template provider |
-| `services/api/gbapi` | FastAPI `/v1` (stops, arrivals, routes live, SSE, reliability, CSV, methodology, copilot, admin), API keys + quotas |
-| `apps/web` | Next.js app: stops, stop page, live map, reliability, methodology, ask, admin |
-| `evals/` | gold set (generated from data), red team, eval runner and reports |
+| `data/pipeline/gbdata` | GTFS current + archive, D2 arrival/departure pipeline (DuckDB over Parquet), completeness, reliability metrics, analytics DB |
+| `ml/gbml` | Model A (LightGBM quantile + Optuna + MAPIE CQR), Model B (LightGBM / logistic, isotonic), MLflow tracking + registry, Evidently drift, Polars features |
+| `copilot/gbcopilot` | LangGraph copilot graph, GhostBus MCP server + langchain-mcp-adapters client, methodology RAG (BM25 + dense + rerank), daily-brief map-reduce graph, versioned prompts, cost guard, OpenTelemetry |
+| `services/api/gbapi` | FastAPI `/v1` (stops, arrivals, live routes, SSE via sse-starlette, reliability, CSV, methodology, copilot/brief jobs, admin), API keys + quotas |
+| `apps/web` | Next.js: stop pages, MapLibre + deck.gl live map, Recharts reliability, AI SDK streaming copilot chat, shadcn/ui |
+| `evals/` | gold set, red team, RAG ablation, live eval with LLM judge, promptfoo suite, Locust load test, LangSmith experiments |
 | `docs/` | decisions, blockers, environment, changelog, methodology, threat model, ADRs |
 
 ## Headline numbers (see reports)
 
-- Simulator: map matching median ≈ 6–7 m, arrival median ≈ 4 s / p90 ≈ 15–24 s, ghost precision = recall = 1.0 in all 6 scenarios, 100% Unknown during outages.
-- Model A: p50 MAE 95.7 s vs best baseline 139.9 s (31.6% better); 80% interval coverage 79.3% after conformal calibration.
-- Copilot: 40/40 gold questions, 10/10 refusals, 0 red-team failures. Privacy: 0 coordinates in logs.
+- Arrival model: p50 MAE **94.0 s** vs 139.9 s for the best baseline (32.8% better); 80% interval coverage **79.4%** after MAPIE conformal calibration (`ml/reports/latest.md`).
+- Simulator: map matching worst-scenario median 7.0 m; arrival detection median 4.7 s / p90 22.6 s; ghost precision = recall = 1.0 in 6 scenarios; 100% Unknown during outages; replay identical at 1x and 20x.
+- Copilot: offline graph 40/40 gold, 10/10 refusals, 0 failures across 54 red-team cases (prompts, SQL, MCP tool attacks); gpt-4o-mini/gpt-4o 97.5% gold with 0 red-team failures (`evals/reports/live.md`).
+- Methodology RAG: recall@3 0.812 (hybrid) → 0.938 (bge-reranker-base) → 0.969 (gpt-4o-mini rerank).
+- Quality: mypy clean, promptfoo 47/47, Playwright + axe e2e, 0 coordinates in logs.
 
 ## Data & licenses
 MBTA GTFS / GTFS-Realtime (MassDOT Developers License Agreement), MBTA Bus Arrival Departure Times (CC0), map tiles ©
