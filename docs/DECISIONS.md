@@ -55,3 +55,10 @@ One line each: decision — reason — alternative considered.
 - Alerts recorded every 60 s (VehiclePositions/TripUpdates stay at 20 s) and shown on the stop page — alerts change rarely; politer polling — 20 s for all feeds.
 - Copilot LLM provider = OpenAI (developer's choice, overriding the spec's "no API keys" for Phase B); optional and off by default (`COPILOT_PROVIDER=openai` + `OPENAI_API_KEY` in the git-ignored .env); only view schemas and the question are sent, never data rows; the model only writes SQL, which still passes the validator/read-only/limit/timeout path; without a key it falls back to offline — Ollama (llama3.2:3b, kept as an option but produced mostly invalid SQL in a spot check).
 - Recorder status checks auto-restart a dead recorder; a scheduled-task watchdog was blocked by permissions and is left for the developer (see BLOCKERS #10).
+
+## OpenAI copilot run and prompt tightening (2026-11-23)
+First real run with `gpt-4o-mini`: 82.5% gold / 90% refusals / 0 red-team failures. Failures were missing
+`day_type`/`time_band = 'all'` filters, refusing monthly-trend questions, using `missed_trip_rate` on
+`v_missed_trip_daily`, and mapping "Red Line" to SL1. Prompt now spells out those rules, marks subway/rail as
+unanswerable, and adds two worked examples. Result: 95.0% gold / 100% refusals / 0 red-team failures; DB unchanged.
+Cost of a full comparison run is about $0.01. The offline provider stays the default and the eval-gate provider.

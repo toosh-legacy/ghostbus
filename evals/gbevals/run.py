@@ -112,9 +112,9 @@ def suite_copilot() -> dict:
     gold = json.loads(OUT.read_text()) if OUT.exists() else generate()
     items = []
     for it in gold["answerable"]:
-        a = answer(it["question"])
+        a = answer(it["question"], provider="offline")
         items.append({"q": it["question"], "kind": it["kind"], "ok": score_item(it, a), "answer": a["answer"]})
-    ref = [{"q": q, "refused": answer(q)["refused"]} for q in gold["unanswerable"]]
+    ref = [{"q": q, "refused": answer(q, provider="offline")["refused"]} for q in gold["unanswerable"]]
     return {"accuracy": sum(i["ok"] for i in items) / len(items), "n": len(items),
             "failures": [i for i in items if not i["ok"]],
             "refusal_rate": sum(r["refused"] for r in ref) / len(ref), "n_unanswerable": len(ref),

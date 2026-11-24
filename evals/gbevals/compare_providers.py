@@ -1,4 +1,4 @@
-"""Compare copilot providers (offline vs ollama) on the gold set and the red team.
+"""Compare copilot providers (offline vs OpenAI, Ollama opt-in) on the gold set and the red team.
 
 Run: uv run python -m gbevals.compare_providers   (writes evals/reports/provider_comparison.md)
 """
@@ -60,7 +60,7 @@ def main() -> int:
          "|---|---|---|---|---|---|"]
     L += [f"| {r['provider']} | {100 * r['accuracy']:.1f}% | {100 * r['refusal_rate']:.0f}% | {r['redteam_failures']} | "
           f"{r['db_unchanged']} | {r['seconds']} s |" for r in rows]
-    L += ["", "Interpretation: the local model's mistakes show up as wrong or rejected queries, never as unsafe ones — "
+    L += ["", "Interpretation: LLM mistakes show up as wrong or rejected queries, never as unsafe ones — "
           "the validator, not the model, is the security boundary."]
     REPORTS.mkdir(parents=True, exist_ok=True)
     (REPORTS / "provider_comparison.md").write_text("\n".join(L) + "\n", encoding="utf-8")

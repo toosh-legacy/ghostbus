@@ -35,13 +35,28 @@ Rules:
 - Prefer v_route_timeband_metrics: it has day_type and time_band columns (v_route_month_metrics does not).
 - Use the rate column for rates (missed_trip_rate, not missed_trips). No subqueries are needed.
 - Always select route_id and month (when the table has them) plus the metric column, using the exact column names.
-- Rates are fractions 0-1. Use day_type 'all' and time_band 'all' unless the question names a day type or time band
-  (time_band values: am_peak, midday, pm_peak, evening, early_late; day_type values: weekday, weekend).
+- Rates are fractions 0-1. With v_route_timeband_metrics ALWAYS filter day_type and time_band: use 'all' for both
+  unless the question names a day type or time band (time_band values: am_peak, midday, pm_peak, evening, early_late;
+  day_type values: weekday, weekend). Otherwise you return one row per band, which is wrong.
+- "Change by month" / trend questions: select route_id, month and the metric for every month, ORDER BY month.
+  Do not refuse them.
+- v_missed_trip_daily is per day and its rate column is missed_rate (not missed_trip_rate); for monthly missed-trip
+  rates use v_route_timeband_metrics.
+- Only the bus routes listed below exist. Subway lines (Red, Orange, Blue, Green Line) and commuter rail are NOT in
+  the data: output {CANNOT} for them. "Silver Line" alone is ambiguous between SL1 and SL3.
 - Data covers months {months[0]} to {months[-1]}; "last month" means {months[-1]}. Months are strings like '2025-12'.
 - Route ids are strings: '1','23','28','39','66','77','109','111','741' (= SL1),'743' (= SL3).
 - For "highest"/"worst" missed-trip, bunching or excess wait, ORDER BY the metric DESC; for on-time performance or
   headway adherence, "worst" means lowest (ASC). Add LIMIT N when the question asks for N routes.
-- If the question cannot be answered from these tables, output exactly {CANNOT}.
+- Any question about the listed bus routes and the metrics on-time performance, headway adherence, excess wait time,
+  bunching or missed trips IS answerable. Output exactly {CANNOT} only for other data (ridership, crowding, fares,
+  weather, subway/rail, stops' amenities, rider data) or months outside the data.
+
+Examples:
+Q: What was the excess wait time of route 66 in the PM peak in August 2025?
+SQL: SELECT route_id, month, excess_wait_time_s FROM v_route_timeband_metrics WHERE route_id = '66' AND month = '2025-08' AND day_type = 'all' AND time_band = 'pm_peak'
+Q: Which 3 routes had the lowest on-time performance on weekdays in July 2025?
+SQL: SELECT route_id, month, on_time_performance FROM v_route_timeband_metrics WHERE month = '2025-07' AND day_type = 'weekday' AND time_band = 'all' ORDER BY on_time_performance ASC LIMIT 3
 
 Question: {question}
 SQL:"""
