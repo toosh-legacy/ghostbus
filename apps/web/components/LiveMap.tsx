@@ -1,49 +1,78 @@
 "use client";
 import { useEffect, useRef } from "react";
-import type * as L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
+import type { Map as MlMap, StyleSpecification } from "maplibre-gl";
+import type { MapboxOverlay } from "@deck.gl/mapbox";
 
 export type Vehicle = { vehicle_id: string; lat: number; lon: number; age_s: number; stale: boolean; trip_id?: string };
+type Shape = { coords: [number, number][] }; // [lat, lon] pairs from the API
+type Stop = { lat: number; lon: number; name: string };
 
-// Leaflet + OpenStreetMap tiles for local development only (light use, attribution shown).
-export default function LiveMap({ shapes, stops, vehicles }: {
-  shapes: { coords: [number, number][] }[]; stops: { lat: number; lon: number; name: string }[]; vehicles: Vehicle[];
-}) {
+// OpenStreetMap raster tiles for local development only (light use, attribution shown).
+const STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256,
+           attribution: "© OpenStreetMap contributors", maxzoom: 18 },
+  },
+  layers: [{ id: "osm", type: "raster", source: "osm" }],
+};
+
+const ROUTE: [number, number, number] = [30, 58, 138];
+const LIVE: [number, number, number] = [185, 28, 28];
+const STALE: [number, number, number, number] = [100, 116, 139, 110];
+
+/** MapLibre GL base map with deck.gl layers: route paths, stops, and live buses (stale buses greyed out). */
+export default function LiveMap({ shapes, stops, vehicles }: { shapes: Shape[]; stops: Stop[]; vehicles: Vehicle[] }) {
   const el = useRef<HTMLDivElement>(null);
-  const map = useRef<L.Map | null>(null);
-  const layer = useRef<L.LayerGroup | null>(null);
-  const lib = useRef<typeof L | null>(null);
+  const map = useRef<MlMap | null>(null);
+  const overlay = useRef<MapboxOverlay | null>(null);
+  const deck = useRef<typeof import("@deck.gl/layers") | null>(null);
+
+  const layers = (vs: Vehicle[]) => {
+    const L = deck.current;
+    if (!L) return [];
+    return [
+      new L.PathLayer<Shape>({ id: "routes", data: shapes, getPath: (s) => s.coords.map(([la, lo]) => [lo, la] as [number, number]),
+        getColor: ROUTE, getWidth: 4, widthUnits: "pixels" }),
+      new L.ScatterplotLayer<Stop>({ id: "stops", data: stops, getPosition: (s) => [s.lon, s.lat], getRadius: 3,
+        radiusUnits: "pixels", getFillColor: [51, 65, 85], pickable: true }),
+      new L.ScatterplotLayer<Vehicle>({ id: "buses", data: vs, getPosition: (v) => [v.lon, v.lat], getRadius: 8,
+        radiusUnits: "pixels", getFillColor: (v) => (v.stale ? STALE : LIVE), stroked: true, getLineColor: [255, 255, 255],
+        lineWidthMinPixels: 1.5, pickable: true, updateTriggers: { getFillColor: vs.map((v) => v.stale).join() } }),
+    ];
+  };
 
   useEffect(() => {
     let cancelled = false;
-    import("leaflet").then((Lm) => {
+    Promise.all([import("maplibre-gl"), import("@deck.gl/mapbox"), import("@deck.gl/layers")]).then(([ml, mb, L]) => {
       if (cancelled || !el.current || map.current) return;
-      lib.current = Lm;
-      const m = Lm.map(el.current, { zoomControl: true });
-      Lm.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18, attribution: "© OpenStreetMap contributors",
-      }).addTo(m);
-      const all: [number, number][] = [];
-      shapes.forEach((s) => { Lm.polyline(s.coords, { color: "#1e3a8a", weight: 4 }).addTo(m); all.push(...s.coords); });
-      stops.forEach((s) => Lm.circleMarker([s.lat, s.lon], { radius: 3, color: "#334155" }).bindTooltip(s.name).addTo(m));
-      if (all.length) m.fitBounds(Lm.latLngBounds(all));
-      layer.current = Lm.layerGroup().addTo(m);
+      deck.current = L;
+      const m = new ml.Map({ container: el.current, style: STYLE, center: [-71.06, 42.35], zoom: 11, attributionControl: { compact: true } });
+      m.addControl(new ml.NavigationControl({ showCompass: false }), "top-right");
+      const all = shapes.flatMap((s) => s.coords);
+      if (all.length) {
+        const lons = all.map((c) => c[1]), lats = all.map((c) => c[0]);
+        m.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 24, duration: 0 });
+      }
+      const o = new mb.MapboxOverlay({
+        interleaved: false, layers: layers(vehicles),
+        getTooltip: ({ object }) => (object && "vehicle_id" in object
+          ? `Bus ${object.vehicle_id} · ${object.age_s}s ago${object.stale ? " (stale)" : ""}`
+          : object && "name" in object ? object.name : null),
+      });
+      m.addControl(o);
+      overlay.current = o;
       map.current = m;
     });
-    return () => { cancelled = true; map.current?.remove(); map.current = null; };
+    return () => { cancelled = true; map.current?.remove(); map.current = null; overlay.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    const Lm = lib.current;
-    if (!Lm || !layer.current) return;
-    layer.current.clearLayers();
-    vehicles.forEach((v) => {
-      Lm.circleMarker([v.lat, v.lon], {
-        radius: 8, color: v.stale ? "#64748b" : "#b91c1c", fillOpacity: v.stale ? 0.3 : 0.9, opacity: v.stale ? 0.4 : 1,
-      }).bindTooltip(`Bus ${v.vehicle_id} · ${v.age_s}s ago${v.stale ? " (stale)" : ""}`).addTo(layer.current!);
-    });
+    overlay.current?.setProps({ layers: layers(vehicles) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicles]);
 
-  return <div ref={el} className="h-80 w-full rounded border" role="img" aria-label="Map of the route with live buses; a list follows" />;
+  return <div ref={el} className="h-80 w-full overflow-hidden rounded border" role="img" aria-label="Map of the route with live buses; a list follows" />;
 }

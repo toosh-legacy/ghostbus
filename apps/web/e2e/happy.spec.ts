@@ -20,9 +20,16 @@ test("nearby -> stop page -> route map -> reliability -> copilot (mobile)", asyn
   await page.goto("/reliability");
   await expect(page.getByRole("table")).toBeVisible();
   await axe(page);
+  await page.goto("/reliability/1");
+  await expect(page.getByRole("figure", { name: /Monthly reliability trend/ })).toBeVisible();
   await page.goto("/ask");
+  await page.getByLabel("Your question").fill("Compare on-time performance for route 1 and route 111 in November 2025.");
   await page.getByRole("button", { name: "Ask" }).click();
-  await expect(page.getByText(/Highest missed-trip rate/)).toBeVisible();
+  await expect(page.getByText(/MCP tool compare_routes/)).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByRole("table")).toBeVisible();
+  await page.getByLabel("Your question").fill("How is bunching measured?");
+  await page.getByRole("button", { name: "Ask" }).click();
+  await expect(page.getByText("methodology search")).toBeVisible({ timeout: 45_000 });
   await axe(page);
   await page.goto("/methodology");
   await expect(page.getByText(/ghost-def v1\.\d/).first()).toBeVisible();

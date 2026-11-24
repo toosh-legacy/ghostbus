@@ -4,6 +4,10 @@ import { Suspense } from "react";
 import "./globals.css";
 import Providers from "./providers";
 import RegisterSW from "@/components/RegisterSW";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "GhostBus — is my bus actually coming?",
@@ -22,7 +26,7 @@ const nav = [
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className={cn("h-full", "font-sans", geist.variable)}>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:p-2 focus:bg-white">
           Skip to content

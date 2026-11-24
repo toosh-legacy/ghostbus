@@ -3,6 +3,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE, get, pct, routeLabel } from "@/lib/api";
 import { ErrorBox, Loading } from "@/components/ui";
+import { TrendChart } from "@/components/charts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function RouteReliability() {
@@ -11,12 +12,12 @@ export default function RouteReliability() {
   if (q.isLoading) return <Loading what="route reliability" />;
   if (q.error) return <ErrorBox error={q.error} />;
   const d = q.data!.data;
-  const max = Math.max(...d.trend.map((t: any) => t.missed_trip_rate ?? 0), 0.0001);
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Route {routeLabel(routeId)} reliability</h1>
       <section aria-labelledby="trend">
         <h2 id="trend" className="text-xl font-semibold">Monthly trend</h2>
+        <TrendChart data={d.trend} />
         <table className="w-full bg-white text-sm text-left">
           <thead><tr><th scope="col">Month</th><th scope="col">On-time</th><th scope="col">Headway adherence</th>
             <th scope="col">Bunching</th><th scope="col">Missed-trip rate</th></tr></thead>
@@ -25,10 +26,7 @@ export default function RouteReliability() {
               <tr key={t.month} className="border-t">
                 <th scope="row">{t.month}</th><td>{pct(t.on_time_performance)}</td><td>{pct(t.headway_adherence)}</td>
                 <td>{pct(t.bunching_rate)}</td>
-                <td>
-                  <span className="inline-block h-3 bg-red-700 align-middle mr-2" style={{ width: `${(100 * (t.missed_trip_rate ?? 0)) / max}px` }} aria-hidden="true" />
-                  {pct(t.missed_trip_rate)}
-                </td>
+                <td>{pct(t.missed_trip_rate)}</td>
               </tr>
             ))}
           </tbody>

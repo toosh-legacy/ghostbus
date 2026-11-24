@@ -1,4 +1,6 @@
 import type { FeedHealth } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const GHOST_STYLE: Record<string, { cls: string; icon: string; label: string }> = {
   low: { cls: "bg-green-100 text-green-900 border-green-700", icon: "●", label: "Low ghost risk" },
@@ -11,11 +13,11 @@ const GHOST_STYLE: Record<string, { cls: string; icon: string; label: string }> 
 export function GhostBadge({ state, reason, prior }: { state: string; reason?: string; prior?: number | null }) {
   const s = GHOST_STYLE[state] ?? GHOST_STYLE.unknown;
   return (
-    <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-sm ${s.cls}`} title={reason}>
+    <Badge variant="outline" className={cn("h-auto rounded border px-2 py-0.5 text-sm", s.cls)} title={reason}>
       <span aria-hidden="true">{s.icon}</span>
       <span>{s.label}</span>
       {prior !== undefined && prior !== null && <span className="opacity-80">· prior {(prior * 100).toFixed(1)}%</span>}
-    </span>
+    </Badge>
   );
 }
 

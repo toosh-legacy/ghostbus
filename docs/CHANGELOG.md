@@ -55,3 +55,6 @@
 
 ## ML + platform stack
 - LightGBM quantile + Optuna + MAPIE CQR (Model A 94.0 s MAE, 79.4% coverage); LightGBM Model B; MLflow tracking + registry with champion alias; Evidently drift; Polars features; APScheduler recorder and pipeline timers; Locust SSE load test.
+
+## Web: AI SDK chat, MapLibre + deck.gl, Recharts, shadcn/ui, Vitest
+- /ask streams copilot progress and answers through a Vercel AI SDK chat route; live map on MapLibre GL + deck.gl; Recharts trend and missed-trip charts; shadcn/ui components; Vitest unit tests; regenerated openapi-typescript client; Playwright + axe e2e passing.

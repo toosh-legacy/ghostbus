@@ -15,22 +15,25 @@ type Live = { shapes: { coords: [number, number][] }[]; stops: { stop_id: string
 export default function RoutePage() {
   const { id } = useParams<{ id: string }>();
   const q = useQuery({ queryKey: ["live", id], queryFn: () => get<Live>(`/v1/routes/${id}/live`), refetchInterval: 20000 });
-  const [vehicles, setVehicles] = useState<Record<string, Vehicle>>({});
+  // SSE updates newer than the last snapshot override it; a snapshot refetch replaces older SSE updates.
+  const [live, setLive] = useState<Record<string, Vehicle & { seen: number }>>({});
+  const [feedStale, setFeedStale] = useState(false);
 
-  useEffect(() => {
-    if (q.data) setVehicles(Object.fromEntries(q.data.data.vehicles.map((v) => [v.vehicle_id, v])));
-  }, [q.data]);
-
-  // SSE: vehicle updates within ~2 s of processing
+  // SSE: vehicle updates within ~2 s of processing; feed_health events come from the ghost staleness timer
   useEffect(() => {
     const es = new EventSource(`${API_BASE}/v1/stream?route=${encodeURIComponent(id)}`);
     es.addEventListener("vehicle", (ev) => {
       const v = JSON.parse((ev as MessageEvent).data);
       if (v.route_id !== id) return;
-      setVehicles((cur) => ({ ...cur, [v.vehicle_id]: { ...v, age_s: 0, stale: false } }));
+      setLive((cur) => ({ ...cur, [v.vehicle_id]: { ...v, age_s: 0, stale: false, seen: Date.now() } }));
     });
+    es.addEventListener("feed_health", (ev) => setFeedStale(Boolean(JSON.parse((ev as MessageEvent).data).stale)));
     return () => es.close();
   }, [id]);
+
+  const vehicles: Record<string, Vehicle> = Object.fromEntries((q.data?.data.vehicles ?? []).map((v) => [v.vehicle_id, v]));
+  for (const [k, v] of Object.entries(live)) if (v.seen > q.dataUpdatedAt) vehicles[k] = v;
+  if (feedStale) for (const k of Object.keys(vehicles)) vehicles[k] = { ...vehicles[k], stale: true };
 
   if (q.isLoading) return <Loading what="route" />;
   if (q.error) return <ErrorBox error={q.error} />;

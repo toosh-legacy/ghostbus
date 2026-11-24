@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE, get, pct, routeLabel } from "@/lib/api";
 import { ErrorBox, Loading } from "@/components/ui";
+import { MissedTripBars } from "@/components/charts";
 
 type Row = {
   route_id: string; on_time_performance: number | null; headway_adherence: number | null; excess_wait_time_s: number | null;
@@ -53,6 +54,10 @@ export default function Reliability() {
       </div>
       {q.isLoading && <Loading what="metrics" />}
       {q.error && <ErrorBox error={q.error} />}
+      {q.data && (
+        <MissedTripBars label={`${q.data.month}, ${band.replace("_", " ")}, ${day} days`}
+                        data={q.data.data.map((r) => ({ route: routeLabel(r.route_id), missed_trip_rate: r.missed_trip_rate }))} />
+      )}
       {q.data && (
         <div className="overflow-x-auto">
           <table className="w-full bg-white text-left text-sm">

@@ -12,3 +12,9 @@ Format: blocker — what was tried — fallback used / status.
 8. **CI has no lake data** (raw data is never committed) — data-dependent tests/evals skip in CI; full suite + `make eval` run locally (status: open, by design).
 9. **Phase 7 (Azure prep) skipped** at the developer's request mid-run (status: deferred to the developer).
 10. **Recorder killed without an error at 17:48 CST (23:48 UTC) on 2026-11-23**, most likely torn down with this session's background processes under memory pressure (the system was at 1.4–2.7 GB free). Gap 23:48–01:02 UTC (~74 min), logged in `var/recorder_gaps.log`; auto-restarted by `tasks.py recorder-status`. A user-level scheduled-task watchdog was proposed but not created (needs your approval) — run it yourself: `schtasks /Create /TN GhostBusRecorderWatchdog /SC MINUTE /MO 5 /TR "\"C:\Users\tusha\Documents\Project\ghostbus\.venv\Scripts\pythonw.exe\" \"C:\Users\tusha\Documents\Project\ghostbus\tasks.py\" recorder-status" /F` (remove with `schtasks /Delete /TN GhostBusRecorderWatchdog /F`) (status: open).
+
+## 11. Recorder died silently again (2026-11-24, ~04:13–07:05 UTC, ~2.9 h gap)
+Heartbeat stopped during the memory-heavy training + live-eval window; no error in the log, same pattern as #10
+(process reaped under memory pressure). Restarted on the APScheduler-based recorder; gap recorded in
+var/recorder_gaps.log. Replays and metrics treat the window as missing data (unknown), never missed. The scheduled-task
+watchdog from #10 would have restarted it within a minute; still recommended.
